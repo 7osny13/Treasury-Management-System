@@ -6,7 +6,7 @@ const SUPABASE_CONFIG = {
     url: 'https://murxgxltykedgxbndbrs.supabase.co',
     
     // ضع هنا anon public key من Supabase
-    anonKey: 'YOUR_ANON_KEY_HERE'
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11cnhneGx0eWtlZGd4Ym5kYnJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NjE2NzEsImV4cCI6MjA4MzIzNzY3MX0.-vy4dVSHX9ViW4XKYZlY3qNprVH8TyfFB0LjAf8kn4s'
 };
 
 // Initialize Supabase client
