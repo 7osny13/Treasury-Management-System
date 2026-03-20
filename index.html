@@ -14,24 +14,23 @@
 
   <div class="container">
     <h1>💼 إدارة الخزينة</h1>
-
     <div id="syncStatus" class="sync-status" style="display: none;"></div>
 
     <div class="tabs">
       <button class="tab active" data-tab="dashboard">لوحة التحكم</button>
       <button class="tab" data-tab="add-transaction">إضافة معاملة</button>
       <button class="tab" data-tab="transactions">المعاملات</button>
-      <button class="tab" data-tab="report">التقرير اليومي</button>
+      <button class="tab" data-tab="report">التقرير</button>
+      <button class="tab" data-tab="accounts">الحسابات</button>
       <button class="tab" data-tab="backup">النسخ الاحتياطي</button>
     </div>
 
-    <!-- Dashboard Tab -->
+    <!-- Dashboard -->
     <div id="dashboard" class="tab-content active">
       <div class="total-balance">
         <h2>إجمالي الرصيد</h2>
         <div class="amount" id="totalBalance">0.00 جنيه</div>
       </div>
-
       <div class="summary-row">
         <div class="summary-card">
           <span>🏦 البنوك</span>
@@ -42,15 +41,13 @@
           <strong id="walletTotal">0.00 جنيه</strong>
         </div>
       </div>
-
-      <h2 style="margin-bottom: 20px; color: #667eea;">الأرصدة الحالية</h2>
+      <h2 style="margin-bottom:20px;color:#667eea;">الأرصدة الحالية</h2>
       <div class="balance-grid" id="balanceGrid"></div>
     </div>
 
-    <!-- Add Transaction Tab -->
+    <!-- Add Transaction -->
     <div id="add-transaction" class="tab-content">
-      <h2 style="margin-bottom: 20px; color: #667eea;">إضافة معاملة جديدة</h2>
-
+      <h2 style="margin-bottom:20px;color:#667eea;">إضافة معاملة جديدة</h2>
       <div class="form-group">
         <label>نوع المعاملة</label>
         <select id="transactionType">
@@ -59,35 +56,28 @@
           <option value="transfer">🔄 تحويل بين الحسابات</option>
         </select>
       </div>
-
       <div id="accountFromGroup" class="form-group">
         <label>من الحساب</label>
         <select id="accountFrom"></select>
       </div>
-
       <div id="accountToGroup" class="form-group">
         <label>إلى الحساب</label>
         <select id="accountTo"></select>
       </div>
-
       <div class="form-group">
         <label>المبلغ (جنيه)</label>
         <input type="number" id="amount" placeholder="0.00" min="0" step="0.01">
       </div>
-
       <div class="form-group">
         <label>الملاحظات</label>
         <textarea id="notes" placeholder="ملاحظة عن المعاملة..."></textarea>
       </div>
-
       <button class="btn" id="addTransactionBtn">💾 حفظ المعاملة</button>
     </div>
 
-    <!-- Transactions Tab -->
+    <!-- Transactions -->
     <div id="transactions" class="tab-content">
-      <h2 style="margin-bottom: 16px; color: #667eea;">سجل المعاملات</h2>
-
-      <!-- Search & Filter Bar -->
+      <h2 style="margin-bottom:16px;color:#667eea;">سجل المعاملات</h2>
       <div class="filter-bar">
         <div class="filter-row">
           <input type="text" id="searchInput" placeholder="🔍 بحث في الملاحظات أو المبلغ..." class="search-input">
@@ -104,48 +94,68 @@
           </select>
         </div>
         <div class="filter-row">
-          <input type="date" id="filterDateFrom" class="filter-date" title="من تاريخ">
+          <input type="date" id="filterDateFrom" class="filter-date">
           <span class="date-separator">←</span>
-          <input type="date" id="filterDateTo" class="filter-date" title="إلى تاريخ">
+          <input type="date" id="filterDateTo" class="filter-date">
           <button id="resetFiltersBtn" class="btn-reset">↺ إعادة تعيين</button>
         </div>
-        <div class="filter-count">
-          <span id="transactionsCount"></span>
-        </div>
+        <div class="filter-count"><span id="transactionsCount"></span></div>
       </div>
-
       <div id="transactionsList"></div>
     </div>
 
-    <!-- Report Tab -->
+    <!-- Report -->
     <div id="report" class="tab-content">
-      <h2 style="margin-bottom: 20px; color: #667eea;">التقرير اليومي</h2>
+      <h2 style="margin-bottom:20px;color:#667eea;">التقرير اليومي</h2>
       <div id="reportContent"></div>
-      <button class="btn whatsapp-btn" id="shareReportBtn">
-        📱 مشاركة التقرير على الواتساب
-      </button>
+      <button class="btn whatsapp-btn" id="shareReportBtn">📱 مشاركة على الواتساب</button>
     </div>
 
-    <!-- Backup Tab -->
-    <div id="backup" class="tab-content">
-      <h2 style="margin-bottom: 20px; color: #667eea;">النسخ الاحتياطي</h2>
+    <!-- Accounts Management -->
+    <div id="accounts" class="tab-content">
+      <h2 style="margin-bottom:20px;color:#667eea;">⚙️ إدارة الحسابات</h2>
 
+      <!-- Add New Account -->
+      <div class="report-section">
+        <h3>➕ إضافة حساب جديد</h3>
+        <div class="add-account-form">
+          <div class="form-group" style="margin-bottom:0;flex:1;">
+            <input type="text" id="newAccountName" placeholder="اسم البنك أو المحفظة..." style="width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:15px;direction:rtl;">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <select id="newAccountType" style="padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:15px;direction:rtl;background:#fff;">
+              <option value="bank">🏦 بنك</option>
+              <option value="wallet">📱 محفظة</option>
+            </select>
+          </div>
+          <button class="btn" id="addAccountBtn" style="margin-top:0;width:auto;padding:12px 24px;">➕ إضافة</button>
+        </div>
+      </div>
+
+      <!-- Accounts List -->
+      <div class="report-section">
+        <h3>📋 الحسابات الحالية</h3>
+        <div id="accountsList"></div>
+      </div>
+    </div>
+
+    <!-- Backup -->
+    <div id="backup" class="tab-content">
+      <h2 style="margin-bottom:20px;color:#667eea;">النسخ الاحتياطي</h2>
       <div class="report-section">
         <h3>📥 تصدير البيانات</h3>
-        <p style="margin-bottom: 15px; color: #666;">احفظ نسخة احتياطية من جميع بياناتك</p>
+        <p style="margin-bottom:15px;color:#666;">احفظ نسخة احتياطية من جميع بياناتك</p>
         <button class="btn btn-success" id="exportBtn">📥 تصدير البيانات</button>
       </div>
-
       <div class="report-section">
         <h3>📤 استيراد البيانات</h3>
-        <p style="margin-bottom: 15px; color: #666;">استعادة البيانات من نسخة احتياطية سابقة</p>
-        <input type="file" id="importFile" accept=".json" style="margin-bottom: 15px;">
+        <p style="margin-bottom:15px;color:#666;">استعادة البيانات من نسخة احتياطية سابقة</p>
+        <input type="file" id="importFile" accept=".json" style="margin-bottom:15px;">
         <button class="btn btn-secondary" id="importBtn">📤 استيراد البيانات</button>
       </div>
-
       <div class="report-section">
         <h3>⚠️ حذف جميع البيانات</h3>
-        <p style="margin-bottom: 15px; color: #dc3545;">تحذير: هذا الإجراء لا يمكن التراجع عنه!</p>
+        <p style="margin-bottom:15px;color:#dc3545;">تحذير: هذا الإجراء لا يمكن التراجع عنه!</p>
         <button class="btn btn-danger" id="clearBtn">🗑️ حذف جميع البيانات</button>
       </div>
     </div>
