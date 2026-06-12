@@ -1,16 +1,16 @@
 // Treasury Management Application
-// Phase C — Statistics & Charts
+// Phase D — Prevent Duplicate, Edit Transaction, Quick Search, Custom Icons
 
 const DEFAULT_ACCOUNTS = {
-  ahly:       { name: 'البنك الأهلي', type: 'bank' },
-  masr:       { name: 'بنك مصر', type: 'bank' },
-  qatar:      { name: 'بنك قطر', type: 'bank' },
-  cib:        { name: 'البنك التجاري الدولي', type: 'bank' },
-  alex_shimaa:{ name: 'بنك الإسكندرية - شيماء', type: 'bank' },
-  alex_omar:  { name: 'بنك الإسكندرية - عمر', type: 'bank' },
-  abudhabi:   { name: 'بنك أبوظبي', type: 'bank' },
-  etisalat:   { name: 'محفظة اتصالات', type: 'wallet' },
-  vodafone:   { name: 'محفظة فودافون', type: 'wallet' }
+  ahly:       { name: 'البنك الأهلي',            type: 'bank',   icon: '🏦' },
+  masr:       { name: 'بنك مصر',                 type: 'bank',   icon: '🏦' },
+  qatar:      { name: 'بنك قطر',                 type: 'bank',   icon: '🏦' },
+  cib:        { name: 'البنك التجاري الدولي',     type: 'bank',   icon: '🏦' },
+  alex_shimaa:{ name: 'بنك الإسكندرية - شيماء',  type: 'bank',   icon: '🏦' },
+  alex_omar:  { name: 'بنك الإسكندرية - عمر',    type: 'bank',   icon: '🏦' },
+  abudhabi:   { name: 'بنك أبوظبي',              type: 'bank',   icon: '🏦' },
+  etisalat:   { name: 'محفظة اتصالات',           type: 'wallet', icon: '📱' },
+  vodafone:   { name: 'محفظة فودافون',            type: 'wallet', icon: '📱' }
 };
 
 let ACCOUNTS = { ...DEFAULT_ACCOUNTS };
@@ -22,7 +22,15 @@ let statsMonth = new Date().getMonth();
 let statsYear  = new Date().getFullYear();
 let chartInstances = {};
 
+// ① Duplicate prevention flag
+let isSaving = false;
+
 Object.keys(ACCOUNTS).forEach(k => { appData.balances[k] = 0; });
+
+// Available icons for picker
+const ICON_OPTIONS = ['🏦','🏧','💳','💰','📱','🏪','🏢','🏬','💵','💴','💶','💷','🪙','💎','🔐','📊','🏠','🚗','✈️','⭐'];
+
+const MONTH_NAMES = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
 // =====================
 // TOAST
@@ -68,7 +76,9 @@ function generateAccountKey(name) {
   return (name.replace(/\s+/g,'_').replace(/[^\w]/g,'') || 'account') + '_' + Date.now();
 }
 
-const MONTH_NAMES = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+function getAccountIcon(key) {
+  return ACCOUNTS[key]?.icon || (ACCOUNTS[key]?.type === 'wallet' ? '📱' : '🏦');
+}
 
 // =====================
 // DATABASE
@@ -96,6 +106,10 @@ async function loadFromDatabase() {
       appData = data[0].data;
       ACCOUNTS = (appData.accounts && Object.keys(appData.accounts).length > 0)
         ? { ...appData.accounts } : { ...DEFAULT_ACCOUNTS };
+      // Add icon field to accounts that don't have it
+      Object.keys(ACCOUNTS).forEach(k => {
+        if (!ACCOUNTS[k].icon) ACCOUNTS[k].icon = ACCOUNTS[k].type === 'wallet' ? '📱' : '🏦';
+      });
       appData.accounts = { ...ACCOUNTS };
       Object.keys(ACCOUNTS).forEach(k => { if (appData.balances[k] == null) appData.balances[k] = 0; });
       if (!appData.transactions) appData.transactions = [];
@@ -125,7 +139,7 @@ function renderAccountsList() {
         const bal = appData.balances[key] || 0;
         return `<div class="account-manage-item">
           <div class="account-manage-info">
-            <span class="account-manage-icon">${acc.type==='bank'?'🏦':'📱'}</span>
+            <span class="account-manage-icon">${acc.icon || (acc.type==='bank'?'🏦':'📱')}</span>
             <div>
               <div class="account-manage-name">${acc.name}</div>
               <div class="account-manage-balance ${bal!==0?'has-balance':''}">${formatNumber(bal)} جنيه</div>
@@ -147,6 +161,7 @@ function openAddAccount() {
   document.getElementById('accountNameInput').value = '';
   document.getElementById('accountTypeInput').value = 'bank';
   document.getElementById('accountEditKey').value = '';
+  renderIconPicker('🏦');
   document.getElementById('accountModal').classList.add('modal-show');
 }
 
@@ -156,7 +171,23 @@ function openEditAccount(key) {
   document.getElementById('accountNameInput').value = acc.name;
   document.getElementById('accountTypeInput').value = acc.type;
   document.getElementById('accountEditKey').value = key;
+  renderIconPicker(acc.icon || (acc.type==='wallet'?'📱':'🏦'));
   document.getElementById('accountModal').classList.add('modal-show');
+}
+
+function renderIconPicker(selectedIcon) {
+  const picker = document.getElementById('iconPicker');
+  if (!picker) return;
+  picker.innerHTML = ICON_OPTIONS.map(icon => `
+    <button class="icon-option ${icon===selectedIcon?'selected':''}" onclick="selectIcon('${icon}')" type="button">${icon}</button>
+  `).join('');
+}
+
+function selectIcon(icon) {
+  document.getElementById('selectedIcon').value = icon;
+  document.querySelectorAll('.icon-option').forEach(btn => {
+    btn.classList.toggle('selected', btn.textContent === icon);
+  });
 }
 
 function closeAccountModal() {
@@ -166,16 +197,17 @@ function closeAccountModal() {
 async function saveAccount() {
   const name    = document.getElementById('accountNameInput').value.trim();
   const type    = document.getElementById('accountTypeInput').value;
+  const icon    = document.getElementById('selectedIcon').value || (type==='wallet'?'📱':'🏦');
   const editKey = document.getElementById('accountEditKey').value;
   if (!name) { showToast('من فضلك أدخل اسم الحساب','warning'); return; }
   if (Object.entries(ACCOUNTS).find(([k,v]) => v.name===name && k!==editKey))
     { showToast('يوجد حساب بنفس الاسم','warning'); return; }
   if (editKey) {
-    ACCOUNTS[editKey].name = name; ACCOUNTS[editKey].type = type;
+    ACCOUNTS[editKey].name = name; ACCOUNTS[editKey].type = type; ACCOUNTS[editKey].icon = icon;
     showToast(`تم تعديل "${name}" بنجاح`,'success');
   } else {
     const key = generateAccountKey(name);
-    ACCOUNTS[key] = { name, type }; appData.balances[key] = 0;
+    ACCOUNTS[key] = { name, type, icon }; appData.balances[key] = 0;
     showToast(`تم إضافة "${name}" بنجاح`,'success');
   }
   closeAccountModal(); await saveToDatabase(); updateUI();
@@ -215,13 +247,59 @@ function updateDashboard() {
     if (ACCOUNTS[key].type==='bank') bankTotal+=Number(bal); else walletTotal+=Number(bal);
     const card = document.createElement('div');
     card.className = `balance-card ${ACCOUNTS[key].type==='wallet'?'wallet-card':''}`;
-    card.innerHTML = `<div class="card-icon">${ACCOUNTS[key].type==='bank'?'🏦':'📱'}</div><h3>${ACCOUNTS[key].name}</h3><div class="amount">${formatNumber(bal)} <span>جنيه</span></div>`;
+    card.innerHTML = `<div class="card-icon">${ACCOUNTS[key].icon || (ACCOUNTS[key].type==='bank'?'🏦':'📱')}</div><h3>${ACCOUNTS[key].name}</h3><div class="amount">${formatNumber(bal)} <span>جنيه</span></div>`;
     grid.appendChild(card);
   });
   const el = id => document.getElementById(id);
   if (el('totalBalance'))  el('totalBalance').textContent  = `${formatNumber(total)} جنيه`;
   if (el('bankTotal'))     el('bankTotal').textContent     = `${formatNumber(bankTotal)} جنيه`;
   if (el('walletTotal'))   el('walletTotal').textContent   = `${formatNumber(walletTotal)} جنيه`;
+}
+
+// =====================
+// ② QUICK SEARCH (Dashboard)
+// =====================
+function doQuickSearch() {
+  const q = document.getElementById('quickSearchInput')?.value?.trim().toLowerCase() || '';
+  const resultsEl = document.getElementById('quickSearchResults');
+  if (!q) { resultsEl.innerHTML = ''; resultsEl.style.display='none'; return; }
+
+  const results = appData.transactions.filter(t =>
+    (t.notes && t.notes.toLowerCase().includes(q)) || t.amount.toString().includes(q)
+  ).slice(0, 5);
+
+  if (!results.length) {
+    resultsEl.innerHTML = '<div class="qs-empty">لا توجد نتائج</div>';
+    resultsEl.style.display = 'block';
+    return;
+  }
+
+  resultsEl.innerHTML = results.map(t => {
+    const date = new Date(t.date).toLocaleDateString('ar-EG');
+    const typeIcon = t.type==='income'?'💰':t.type==='expense'?'💸':'🔄';
+    return `<div class="qs-item" onclick="goToTransaction(${t.id})">
+      <span class="qs-icon">${typeIcon}</span>
+      <div class="qs-info">
+        <span class="qs-amount">${formatNumber(t.amount)} جنيه</span>
+        ${t.notes?`<span class="qs-notes">${t.notes}</span>`:''}
+      </div>
+      <span class="qs-date">${date}</span>
+    </div>`;
+  }).join('');
+  resultsEl.style.display = 'block';
+}
+
+function goToTransaction(id) {
+  document.getElementById('quickSearchInput').value = '';
+  document.getElementById('quickSearchResults').style.display = 'none';
+  // Switch to transactions tab and highlight
+  showTab('transactions');
+  filterState = { search:'', type:'all', account:'all', dateFrom:'', dateTo:'' };
+  resetFilters();
+  setTimeout(() => {
+    const el = document.querySelector(`.transaction-item[data-id="${id}"]`);
+    if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.classList.add('highlight'); setTimeout(()=>el.classList.remove('highlight'),2000); }
+  }, 200);
 }
 
 // =====================
@@ -236,7 +314,6 @@ function updateStatisticsTab() {
     return d.getMonth()===statsMonth && d.getFullYear()===statsYear;
   });
 
-  // KPI
   let totalIncome=0, totalExpense=0;
   monthTx.forEach(t => {
     if (t.type==='income')  totalIncome  += t.amount;
@@ -251,7 +328,6 @@ function updateStatisticsTab() {
   netEl.style.color = net >= 0 ? '#28a745' : '#dc3545';
   document.getElementById('kpiCount').textContent = monthTx.length;
 
-  // Top accounts
   const incomeByAcc = {}, expenseByAcc = {};
   monthTx.forEach(t => {
     if (t.type==='income'  && t.accountTo)   incomeByAcc[t.accountTo]   = (incomeByAcc[t.accountTo]  ||0)+t.amount;
@@ -273,7 +349,6 @@ function destroyChart(id) {
   if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
 }
 
-// Chart 1 — Monthly comparison (last 6 months)
 function renderMonthlyCompareChart() {
   destroyChart('monthlyCompare');
   const labels=[], incomes=[], expenses=[];
@@ -281,27 +356,21 @@ function renderMonthlyCompareChart() {
     let m = statsMonth - i; let y = statsYear;
     if (m < 0) { m += 12; y -= 1; }
     labels.push(`${MONTH_NAMES[m].substring(0,3)} ${y}`);
-    const tx = appData.transactions.filter(t => {
-      const d=new Date(t.date); return d.getMonth()===m && d.getFullYear()===y;
-    });
+    const tx = appData.transactions.filter(t => { const d=new Date(t.date); return d.getMonth()===m && d.getFullYear()===y; });
     incomes.push(tx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0));
     expenses.push(tx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0));
   }
   const ctx = document.getElementById('monthlyCompareChart').getContext('2d');
   chartInstances['monthlyCompare'] = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label: 'إيداعات', data: incomes,  backgroundColor: 'rgba(40,167,69,0.75)',  borderColor: '#28a745', borderWidth: 2, borderRadius: 6 },
-        { label: 'سحوبات',  data: expenses, backgroundColor: 'rgba(220,53,69,0.75)', borderColor: '#dc3545', borderWidth: 2, borderRadius: 6 }
-      ]
-    },
+    data: { labels, datasets: [
+      { label: 'إيداعات', data: incomes,  backgroundColor: 'rgba(40,167,69,0.75)',  borderColor: '#28a745', borderWidth: 2, borderRadius: 6 },
+      { label: 'سحوبات',  data: expenses, backgroundColor: 'rgba(220,53,69,0.75)', borderColor: '#dc3545', borderWidth: 2, borderRadius: 6 }
+    ]},
     options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => formatNumber(v) } } } }
   });
 }
 
-// Chart 2 — Balance trend
 function renderBalanceTrendChart() {
   destroyChart('balanceTrend');
   const sorted = [...appData.transactions].sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -310,44 +379,25 @@ function renderBalanceTrendChart() {
   sorted.forEach(t => {
     if (t.type==='income')  running += t.amount;
     if (t.type==='expense') running -= t.amount;
-    const d = new Date(t.date);
-    points.push({ x: d.toLocaleDateString('ar-EG'), y: running });
+    points.push({ x: new Date(t.date).toLocaleDateString('ar-EG'), y: running });
   });
-
-  // Sample max 30 points for readability
   const step = Math.max(1, Math.floor(points.length/30));
   const sampled = points.filter((_,i)=>i%step===0 || i===points.length-1);
-
   const ctx = document.getElementById('balanceTrendChart').getContext('2d');
   chartInstances['balanceTrend'] = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: sampled.map(p=>p.x),
-      datasets: [{
-        label: 'الرصيد الإجمالي',
-        data: sampled.map(p=>p.y),
-        borderColor: '#667eea',
-        backgroundColor: 'rgba(102,126,234,0.1)',
-        fill: true,
-        tension: 0.4,
-        pointRadius: sampled.length < 15 ? 4 : 2,
-        borderWidth: 2
-      }]
-    },
+    data: { labels: sampled.map(p=>p.x), datasets: [{ label: 'الرصيد الإجمالي', data: sampled.map(p=>p.y), borderColor: '#667eea', backgroundColor: 'rgba(102,126,234,0.1)', fill: true, tension: 0.4, pointRadius: sampled.length < 15 ? 4 : 2, borderWidth: 2 }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => formatNumber(v) } }, x: { ticks: { maxRotation: 45 } } } }
   });
 }
 
-// Chart 3 — Balance distribution (doughnut)
 function renderBalanceDistChart() {
   destroyChart('balanceDist');
-  const keys    = Object.keys(ACCOUNTS).filter(k => (appData.balances[k]||0) > 0);
-  const labels  = keys.map(k => ACCOUNTS[k].name);
-  const values  = keys.map(k => appData.balances[k]||0);
-  const colors  = ['#667eea','#28a745','#ffc107','#17a2b8','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6c757d'];
-
+  const keys   = Object.keys(ACCOUNTS).filter(k => (appData.balances[k]||0) > 0);
+  const labels = keys.map(k => ACCOUNTS[k].name);
+  const values = keys.map(k => appData.balances[k]||0);
+  const colors = ['#667eea','#28a745','#ffc107','#17a2b8','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6c757d'];
   if (!values.length) { document.getElementById('balanceDistChart').parentElement.innerHTML='<p class="empty-state">لا يوجد رصيد</p>'; return; }
-
   const ctx = document.getElementById('balanceDistChart').getContext('2d');
   chartInstances['balanceDist'] = new Chart(ctx, {
     type: 'doughnut',
@@ -356,55 +406,35 @@ function renderBalanceDistChart() {
   });
 }
 
-// Chart 4 — Transaction type distribution (pie)
 function renderTypeDistChart() {
   destroyChart('typeDist');
-  const monthTx = appData.transactions.filter(t => {
-    const d=new Date(t.date); return d.getMonth()===statsMonth && d.getFullYear()===statsYear;
-  });
+  const monthTx = appData.transactions.filter(t => { const d=new Date(t.date); return d.getMonth()===statsMonth && d.getFullYear()===statsYear; });
   const inc = monthTx.filter(t=>t.type==='income').length;
   const exp = monthTx.filter(t=>t.type==='expense').length;
   const tra = monthTx.filter(t=>t.type==='transfer').length;
-
   if (!monthTx.length) { document.getElementById('typeDistChart').parentElement.innerHTML='<p class="empty-state">لا توجد معاملات هذا الشهر</p>'; return; }
-
   const ctx = document.getElementById('typeDistChart').getContext('2d');
   chartInstances['typeDist'] = new Chart(ctx, {
     type: 'pie',
-    data: {
-      labels: ['إيداع','سحب','تحويل'],
-      datasets: [{ data: [inc,exp,tra], backgroundColor: ['#28a745','#dc3545','#667eea'], borderWidth: 2 }]
-    },
+    data: { labels: ['إيداع','سحب','تحويل'], datasets: [{ data: [inc,exp,tra], backgroundColor: ['#28a745','#dc3545','#667eea'], borderWidth: 2 }] },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 }
 
-// Chart 5 — Accounts bar (income vs expense per account this month)
 function renderAccountsBarChart(monthTx) {
   destroyChart('accountsBar');
-  const keys = Object.keys(ACCOUNTS);
+  const keys     = Object.keys(ACCOUNTS);
   const incomes  = keys.map(k => monthTx.filter(t=>t.type==='income' && t.accountTo===k).reduce((s,t)=>s+t.amount,0));
   const expenses = keys.map(k => monthTx.filter(t=>t.type==='expense'&& t.accountFrom===k).reduce((s,t)=>s+t.amount,0));
   const labels   = keys.map(k => ACCOUNTS[k].name);
-
   const ctx = document.getElementById('accountsBarChart').getContext('2d');
   chartInstances['accountsBar'] = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label: 'إيداعات', data: incomes,  backgroundColor: 'rgba(40,167,69,0.75)',  borderRadius: 5 },
-        { label: 'سحوبات',  data: expenses, backgroundColor: 'rgba(220,53,69,0.75)', borderRadius: 5 }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'bottom' } },
-      scales: {
-        y: { beginAtZero: true, ticks: { callback: v => formatNumber(v) } },
-        x: { ticks: { maxRotation: 30, font: { size: 11 } } }
-      }
-    }
+    data: { labels, datasets: [
+      { label: 'إيداعات', data: incomes,  backgroundColor: 'rgba(40,167,69,0.75)',  borderRadius: 5 },
+      { label: 'سحوبات',  data: expenses, backgroundColor: 'rgba(220,53,69,0.75)', borderRadius: 5 }
+    ]},
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => formatNumber(v) } }, x: { ticks: { maxRotation: 30, font: { size: 11 } } } } }
   });
 }
 
@@ -453,10 +483,10 @@ function renderFilteredTransactions() {
     const date    = new Date(t.date);
     const dateStr = date.toLocaleDateString('ar-EG')+' '+date.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
     let typeText='', details='', typeClass='';
-    if (t.type==='income')   { typeText='💰 إيداع';  typeClass='type-income';   details=`إلى: ${getAccountName(t.accountTo)}`; }
-    else if (t.type==='expense')  { typeText='💸 سحب';   typeClass='type-expense';  details=`من: ${getAccountName(t.accountFrom)}`; }
-    else                          { typeText='🔄 تحويل'; typeClass='type-transfer'; details=`من: ${getAccountName(t.accountFrom)} ← إلى: ${getAccountName(t.accountTo)}`; }
-    return `<div class="transaction-item ${t.type}">
+    if (t.type==='income')       { typeText='💰 إيداع';  typeClass='type-income';   details=`إلى: ${getAccountName(t.accountTo)}`; }
+    else if (t.type==='expense') { typeText='💸 سحب';    typeClass='type-expense';  details=`من: ${getAccountName(t.accountFrom)}`; }
+    else                         { typeText='🔄 تحويل';  typeClass='type-transfer'; details=`من: ${getAccountName(t.accountFrom)} ← إلى: ${getAccountName(t.accountTo)}`; }
+    return `<div class="transaction-item ${t.type}" data-id="${t.id}">
       <div class="transaction-header">
         <span class="transaction-type ${typeClass}">${typeText}</span>
         <span class="transaction-amount">${formatNumber(t.amount)} جنيه</span>
@@ -465,7 +495,10 @@ function renderFilteredTransactions() {
       ${t.notes?`<div class="transaction-notes">📝 ${t.notes}</div>`:''}
       <div class="transaction-footer">
         <span class="transaction-date">🕐 ${dateStr}</span>
-        <button class="delete-btn" onclick="deleteTransaction(${t.id})">🗑️ حذف</button>
+        <div class="transaction-actions">
+          <button class="edit-btn" onclick="openEditTransaction(${t.id})">✏️ تعديل</button>
+          <button class="delete-btn" onclick="deleteTransaction(${t.id})">🗑️ حذف</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -484,6 +517,75 @@ function populateFilterAccountSelect() {
 }
 
 // =====================
+// ③ EDIT TRANSACTION
+// =====================
+function openEditTransaction(id) {
+  const t = appData.transactions.find(x => x.id === id);
+  if (!t) return;
+
+  const modal = document.getElementById('editTransactionModal');
+  document.getElementById('editTxId').value = t.id;
+  document.getElementById('editTxAmount').value = t.amount;
+  document.getElementById('editTxNotes').value = t.notes || '';
+
+  // Type label
+  const typeLabels = { income: '💰 إيداع', expense: '💸 سحب', transfer: '🔄 تحويل' };
+  document.getElementById('editTxTypeLabel').textContent = typeLabels[t.type] || t.type;
+
+  // Account info
+  let accountInfo = '';
+  if (t.type === 'income')   accountInfo = `إلى: ${getAccountName(t.accountTo)}`;
+  else if (t.type === 'expense')  accountInfo = `من: ${getAccountName(t.accountFrom)}`;
+  else accountInfo = `من: ${getAccountName(t.accountFrom)} ← إلى: ${getAccountName(t.accountTo)}`;
+  document.getElementById('editTxAccountInfo').textContent = accountInfo;
+
+  modal.classList.add('modal-show');
+}
+
+function closeEditTransactionModal() {
+  document.getElementById('editTransactionModal').classList.remove('modal-show');
+}
+
+async function saveEditTransaction() {
+  const id        = parseInt(document.getElementById('editTxId').value);
+  const newAmount = parseFloat(document.getElementById('editTxAmount').value);
+  const newNotes  = document.getElementById('editTxNotes').value;
+
+  if (!newAmount || newAmount <= 0) { showToast('من فضلك أدخل مبلغ صحيح','warning'); return; }
+
+  const t = appData.transactions.find(x => x.id === id);
+  if (!t) return;
+
+  const diff = newAmount - t.amount;
+
+  // Adjust balances based on difference
+  if (diff !== 0) {
+    if (t.type === 'income') {
+      appData.balances[t.accountTo] += diff;
+    } else if (t.type === 'expense') {
+      if (appData.balances[t.accountFrom] - diff < 0) {
+        showToast('الرصيد غير كافي لهذا التعديل','error'); return;
+      }
+      appData.balances[t.accountFrom] -= diff;
+    } else if (t.type === 'transfer') {
+      if (appData.balances[t.accountFrom] - diff < 0) {
+        showToast('الرصيد غير كافي لهذا التعديل','error'); return;
+      }
+      appData.balances[t.accountFrom] -= diff;
+      appData.balances[t.accountTo]   += diff;
+    }
+  }
+
+  t.amount = newAmount;
+  t.notes  = newNotes;
+
+  closeEditTransactionModal();
+  await saveToDatabase();
+  updateUI();
+  showToast('تم تعديل المعاملة بنجاح','success');
+}
+
+// =====================
 // REPORT
 // =====================
 function updateReport() {
@@ -492,9 +594,9 @@ function updateReport() {
   Object.keys(ACCOUNTS).forEach(k=>{ const b=appData.balances[k]; if(b!=null&&!isNaN(b)) total+=Number(b); });
   let html=`<div class="total-balance"><h2>التقرير اليومي — ${today}</h2><div class="amount">${formatNumber(total)} جنيه</div></div>
     <div class="report-section"><h3>🏦 الحسابات البنكية</h3>`;
-  Object.keys(ACCOUNTS).forEach(k=>{ if(ACCOUNTS[k].type==='bank') html+=`<div class="report-item"><span>${ACCOUNTS[k].name}</span><strong>${formatNumber(appData.balances[k]||0)} جنيه</strong></div>`; });
+  Object.keys(ACCOUNTS).forEach(k=>{ if(ACCOUNTS[k].type==='bank') html+=`<div class="report-item"><span>${ACCOUNTS[k].icon||'🏦'} ${ACCOUNTS[k].name}</span><strong>${formatNumber(appData.balances[k]||0)} جنيه</strong></div>`; });
   html+=`</div><div class="report-section"><h3>📱 المحافظ الإلكترونية</h3>`;
-  Object.keys(ACCOUNTS).forEach(k=>{ if(ACCOUNTS[k].type==='wallet') html+=`<div class="report-item"><span>${ACCOUNTS[k].name}</span><strong>${formatNumber(appData.balances[k]||0)} جنيه</strong></div>`; });
+  Object.keys(ACCOUNTS).forEach(k=>{ if(ACCOUNTS[k].type==='wallet') html+=`<div class="report-item"><span>${ACCOUNTS[k].icon||'📱'} ${ACCOUNTS[k].name}</span><strong>${formatNumber(appData.balances[k]||0)} جنيه</strong></div>`; });
   html+=`</div>`;
   const el=document.getElementById('reportContent'); if(el) el.innerHTML=html;
 }
@@ -505,9 +607,9 @@ function updateReport() {
 function updateFormFields() {
   const type=document.getElementById('transactionType').value;
   const fg=document.getElementById('accountFromGroup'), tg=document.getElementById('accountToGroup');
-  if (type==='income')  { fg.style.display='none';  tg.style.display='block'; document.querySelector('#accountToGroup label').textContent='إلى الحساب'; }
-  else if (type==='expense') { fg.style.display='block'; tg.style.display='none'; document.querySelector('#accountFromGroup label').textContent='من الحساب'; }
-  else { fg.style.display='block'; tg.style.display='block'; }
+  if (type==='income')       { fg.style.display='none';  tg.style.display='block'; document.querySelector('#accountToGroup label').textContent='إلى الحساب'; }
+  else if (type==='expense') { fg.style.display='block'; tg.style.display='none';  document.querySelector('#accountFromGroup label').textContent='من الحساب'; }
+  else                       { fg.style.display='block'; tg.style.display='block'; }
 }
 
 function populateAccountSelects() {
@@ -515,38 +617,81 @@ function populateAccountSelects() {
   const fv=fs.value, tv=ts.value;
   fs.innerHTML=''; ts.innerHTML='';
   Object.keys(ACCOUNTS).forEach(key=>{
-    const o=document.createElement('option'); o.value=key; o.textContent=ACCOUNTS[key].name;
+    const o=document.createElement('option'); o.value=key; o.textContent=`${ACCOUNTS[key].icon||''} ${ACCOUNTS[key].name}`;
     if(key===fv) o.selected=true; fs.appendChild(o);
     const o2=o.cloneNode(true); if(key===tv) o2.selected=true; ts.appendChild(o2);
   });
 }
 
 // =====================
-// TRANSACTIONS
+// ① TRANSACTIONS — PREVENT DUPLICATE
 // =====================
 async function addTransaction() {
+  // Prevent double-tap / double-click
+  if (isSaving) return;
+
   const type=document.getElementById('transactionType').value;
   const amount=parseFloat(document.getElementById('amount').value);
   const notes=document.getElementById('notes').value;
   const accountFrom=document.getElementById('accountFrom').value;
   const accountTo=document.getElementById('accountTo').value;
+
   if (!amount||amount<=0) { showToast('من فضلك أدخل مبلغ صحيح','warning'); return; }
   if (type==='transfer'&&accountFrom===accountTo) { showToast('لا يمكن التحويل إلى نفس الحساب','warning'); return; }
-  const tx = { id:Date.now(), type, amount, notes, accountFrom:type!=='income'?accountFrom:null, accountTo:type!=='expense'?accountTo:null, date:new Date().toISOString() };
-  if (type==='income') { appData.balances[accountTo]+=amount; }
-  else if (type==='expense') { if(appData.balances[accountFrom]<amount){showToast('الرصيد غير كافي','error');return;} appData.balances[accountFrom]-=amount; }
-  else { if(appData.balances[accountFrom]<amount){showToast('الرصيد غير كافي','error');return;} appData.balances[accountFrom]-=amount; appData.balances[accountTo]+=amount; }
+
+  // Lock button
+  isSaving = true;
+  const btn = document.getElementById('addTransactionBtn');
+  const originalText = btn.textContent;
+  btn.textContent = '⏳ جاري الحفظ...';
+  btn.disabled = true;
+
+  const tx = {
+    id: Date.now(), type, amount, notes,
+    accountFrom: type!=='income'?accountFrom:null,
+    accountTo:   type!=='expense'?accountTo:null,
+    date: new Date().toISOString()
+  };
+
+  if (type==='income') {
+    appData.balances[accountTo]+=amount;
+  } else if (type==='expense') {
+    if(appData.balances[accountFrom]<amount){ showToast('الرصيد غير كافي','error'); resetSaveBtn(btn,originalText); return; }
+    appData.balances[accountFrom]-=amount;
+  } else {
+    if(appData.balances[accountFrom]<amount){ showToast('الرصيد غير كافي','error'); resetSaveBtn(btn,originalText); return; }
+    appData.balances[accountFrom]-=amount; appData.balances[accountTo]+=amount;
+  }
+
   appData.transactions.unshift(tx);
-  if (await saveToDatabase()) {
+  const saved = await saveToDatabase();
+
+  if (saved) {
     document.getElementById('amount').value=''; document.getElementById('notes').value='';
     updateUI(); showToast('تم حفظ المعاملة بنجاح','success'); showTab('dashboard');
+  } else {
+    // Rollback on failure
+    appData.transactions.shift();
+    if (type==='income')        appData.balances[accountTo]-=amount;
+    else if (type==='expense')  appData.balances[accountFrom]+=amount;
+    else { appData.balances[accountFrom]+=amount; appData.balances[accountTo]-=amount; }
   }
+
+  resetSaveBtn(btn, originalText);
+}
+
+function resetSaveBtn(btn, text) {
+  setTimeout(() => {
+    isSaving = false;
+    btn.textContent = text;
+    btn.disabled = false;
+  }, 1000);
 }
 
 async function deleteTransaction(id) {
   if (!await showConfirmToast('هل تريد حذف هذه المعاملة؟')) return;
   const t=appData.transactions.find(x=>x.id===id); if(!t) return;
-  if (t.type==='income')   appData.balances[t.accountTo]-=t.amount;
+  if (t.type==='income')        appData.balances[t.accountTo]-=t.amount;
   else if (t.type==='expense')  appData.balances[t.accountFrom]+=t.amount;
   else { appData.balances[t.accountFrom]+=t.amount; appData.balances[t.accountTo]-=t.amount; }
   appData.transactions=appData.transactions.filter(x=>x.id!==id);
@@ -645,6 +790,17 @@ function setupEventListeners() {
   document.getElementById('addAccountBtn')?.addEventListener('click', openAddAccount);
   document.getElementById('saveAccountBtn')?.addEventListener('click', saveAccount);
   document.getElementById('cancelAccountBtn')?.addEventListener('click', closeAccountModal);
+  document.getElementById('saveEditTxBtn')?.addEventListener('click', saveEditTransaction);
+  document.getElementById('cancelEditTxBtn')?.addEventListener('click', closeEditTransactionModal);
+
+  // Quick search
+  document.getElementById('quickSearchInput')?.addEventListener('input', doQuickSearch);
+  document.addEventListener('click', e => {
+    const qs = document.getElementById('quickSearchResults');
+    if (qs && !qs.contains(e.target) && e.target.id !== 'quickSearchInput') {
+      qs.style.display = 'none';
+    }
+  });
 
   // Month navigation
   document.getElementById('prevMonth')?.addEventListener('click', () => {
