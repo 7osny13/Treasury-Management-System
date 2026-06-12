@@ -18,6 +18,7 @@
     <div class="modal-dialog">
       <h3 id="accountModalTitle">إضافة حساب جديد</h3>
       <input type="hidden" id="accountEditKey">
+      <input type="hidden" id="selectedIcon" value="🏦">
       <div class="form-group">
         <label>اسم الحساب</label>
         <input type="text" id="accountNameInput" placeholder="مثال: بنك القاهرة">
@@ -29,9 +30,37 @@
           <option value="wallet">📱 محفظة إلكترونية</option>
         </select>
       </div>
+      <div class="form-group">
+        <label>الأيقونة</label>
+        <div id="iconPicker" class="icon-picker"></div>
+      </div>
       <div class="modal-buttons">
         <button class="btn btn-success" id="saveAccountBtn">💾 حفظ</button>
         <button class="btn btn-secondary" id="cancelAccountBtn">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Transaction Modal -->
+  <div id="editTransactionModal" class="modal-overlay">
+    <div class="modal-dialog">
+      <h3>✏️ تعديل المعاملة</h3>
+      <input type="hidden" id="editTxId">
+      <div class="edit-tx-info">
+        <span id="editTxTypeLabel" class="edit-tx-type"></span>
+        <span id="editTxAccountInfo" class="edit-tx-account"></span>
+      </div>
+      <div class="form-group" style="margin-top:16px;">
+        <label>المبلغ (جنيه)</label>
+        <input type="number" id="editTxAmount" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>الملاحظات</label>
+        <textarea id="editTxNotes" placeholder="ملاحظة..."></textarea>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-success" id="saveEditTxBtn">💾 حفظ التعديل</button>
+        <button class="btn btn-secondary" id="cancelEditTxBtn">إلغاء</button>
       </div>
     </div>
   </div>
@@ -52,6 +81,13 @@
 
     <!-- Dashboard Tab -->
     <div id="dashboard" class="tab-content active">
+
+      <!-- ② Quick Search -->
+      <div class="quick-search-wrap">
+        <input type="text" id="quickSearchInput" class="quick-search-input" placeholder="🔍 بحث سريع في المعاملات...">
+        <div id="quickSearchResults" class="quick-search-results" style="display:none;"></div>
+      </div>
+
       <div class="total-balance">
         <h2>إجمالي الرصيد</h2>
         <div class="amount" id="totalBalance">0.00 جنيه</div>
@@ -135,7 +171,7 @@
         <h2 style="color: #667eea;">إدارة الحسابات</h2>
         <button class="btn-add-account" id="addAccountBtn">+ إضافة حساب</button>
       </div>
-      <p class="accounts-hint">يمكنك إضافة بنوك أو محافظ جديدة، وتعديل أسمائها أو حذفها.</p>
+      <p class="accounts-hint">يمكنك إضافة بنوك أو محافظ جديدة، وتعديل أسمائها وأيقوناتها أو حذفها.</p>
       <div id="accountsList"></div>
     </div>
 
@@ -149,79 +185,23 @@
           <button class="month-nav" id="nextMonth">&#8249;</button>
         </div>
       </div>
-
-      <!-- KPI Cards -->
       <div class="kpi-grid">
-        <div class="kpi-card kpi-income">
-          <div class="kpi-icon">💰</div>
-          <div class="kpi-label">إجمالي الإيداعات</div>
-          <div class="kpi-value" id="kpiIncome">0.00 جنيه</div>
-        </div>
-        <div class="kpi-card kpi-expense">
-          <div class="kpi-icon">💸</div>
-          <div class="kpi-label">إجمالي السحوبات</div>
-          <div class="kpi-value" id="kpiExpense">0.00 جنيه</div>
-        </div>
-        <div class="kpi-card kpi-net">
-          <div class="kpi-icon">📊</div>
-          <div class="kpi-label">صافي الشهر</div>
-          <div class="kpi-value" id="kpiNet">0.00 جنيه</div>
-        </div>
-        <div class="kpi-card kpi-count">
-          <div class="kpi-icon">🔢</div>
-          <div class="kpi-label">عدد المعاملات</div>
-          <div class="kpi-value" id="kpiCount">0</div>
-        </div>
+        <div class="kpi-card kpi-income"><div class="kpi-icon">💰</div><div class="kpi-label">إجمالي الإيداعات</div><div class="kpi-value" id="kpiIncome">0.00 جنيه</div></div>
+        <div class="kpi-card kpi-expense"><div class="kpi-icon">💸</div><div class="kpi-label">إجمالي السحوبات</div><div class="kpi-value" id="kpiExpense">0.00 جنيه</div></div>
+        <div class="kpi-card kpi-net"><div class="kpi-icon">📊</div><div class="kpi-label">صافي الشهر</div><div class="kpi-value" id="kpiNet">0.00 جنيه</div></div>
+        <div class="kpi-card kpi-count"><div class="kpi-icon">🔢</div><div class="kpi-label">عدد المعاملات</div><div class="kpi-value" id="kpiCount">0</div></div>
       </div>
-
-      <!-- Top accounts -->
       <div class="stats-row">
-        <div class="stat-box">
-          <h4>🏆 أكثر حساب إيداعاً</h4>
-          <div id="topIncomeAccount" class="stat-highlight">—</div>
-        </div>
-        <div class="stat-box">
-          <h4>📉 أكثر حساب سحباً</h4>
-          <div id="topExpenseAccount" class="stat-highlight">—</div>
-        </div>
+        <div class="stat-box"><h4>🏆 أكثر حساب إيداعاً</h4><div id="topIncomeAccount" class="stat-highlight">—</div></div>
+        <div class="stat-box"><h4>📉 أكثر حساب سحباً</h4><div id="topExpenseAccount" class="stat-highlight">—</div></div>
       </div>
-
-      <!-- Charts -->
-      <div class="chart-card">
-        <h3>📅 مقارنة الأشهر (آخر 6 أشهر)</h3>
-        <div class="chart-wrap">
-          <canvas id="monthlyCompareChart"></canvas>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <h3>📈 تطور الرصيد الإجمالي</h3>
-        <div class="chart-wrap">
-          <canvas id="balanceTrendChart"></canvas>
-        </div>
-      </div>
-
+      <div class="chart-card"><h3>📅 مقارنة الأشهر (آخر 6 أشهر)</h3><div class="chart-wrap"><canvas id="monthlyCompareChart"></canvas></div></div>
+      <div class="chart-card"><h3>📈 تطور الرصيد الإجمالي</h3><div class="chart-wrap"><canvas id="balanceTrendChart"></canvas></div></div>
       <div class="charts-two-col">
-        <div class="chart-card">
-          <h3>🏦 توزيع الرصيد على الحسابات</h3>
-          <div class="chart-wrap chart-wrap-sm">
-            <canvas id="balanceDistChart"></canvas>
-          </div>
-        </div>
-        <div class="chart-card">
-          <h3>🥧 توزيع أنواع المعاملات</h3>
-          <div class="chart-wrap chart-wrap-sm">
-            <canvas id="typeDistChart"></canvas>
-          </div>
-        </div>
+        <div class="chart-card"><h3>🏦 توزيع الرصيد على الحسابات</h3><div class="chart-wrap chart-wrap-sm"><canvas id="balanceDistChart"></canvas></div></div>
+        <div class="chart-card"><h3>🥧 توزيع أنواع المعاملات</h3><div class="chart-wrap chart-wrap-sm"><canvas id="typeDistChart"></canvas></div></div>
       </div>
-
-      <div class="chart-card">
-        <h3>📊 مقارنة الحسابات (الشهر الحالي)</h3>
-        <div class="chart-wrap">
-          <canvas id="accountsBarChart"></canvas>
-        </div>
-      </div>
+      <div class="chart-card"><h3>📊 مقارنة الحسابات (الشهر الحالي)</h3><div class="chart-wrap"><canvas id="accountsBarChart"></canvas></div></div>
     </div>
 
     <!-- Report Tab -->
