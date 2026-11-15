@@ -4,11 +4,42 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>إدارة الخزينة</title>
+  <script>window.__authRecovery = (location.hash + location.search).includes('type=recovery');</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+  <!-- AUTH SCREEN -->
+  <div id="authScreen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo">💼</div>
+      <h2 class="auth-title">إدارة الخزينة</h2>
+      <p class="auth-sub" id="authSub">جاري التحقق...</p>
+
+      <form id="authLoginForm" style="display:none" onsubmit="authLogin(event)">
+        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="authEmail" autocomplete="username" required></div>
+        <div class="form-group"><label>كلمة السر</label><input type="password" id="authPassword" autocomplete="current-password" required></div>
+        <button type="submit" class="btn" id="authLoginBtn">دخول</button>
+        <button type="button" class="auth-link" onclick="showAuthScreen('forgot')">نسيت كلمة السر؟</button>
+      </form>
+
+      <form id="authForgotForm" style="display:none" onsubmit="authSendReset(event)">
+        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="authForgotEmail" autocomplete="username" required></div>
+        <button type="submit" class="btn" id="authForgotBtn">إرسال رابط تغيير كلمة السر</button>
+        <button type="button" class="auth-link" onclick="showAuthScreen('login')">رجوع لتسجيل الدخول</button>
+      </form>
+
+      <form id="authNewpassForm" style="display:none" onsubmit="authSetNewPassword(event)">
+        <div class="form-group"><label>كلمة السر الجديدة</label><input type="password" id="authNewpass" autocomplete="new-password" minlength="8" required></div>
+        <div class="form-group"><label>تأكيد كلمة السر</label><input type="password" id="authNewpass2" autocomplete="new-password" minlength="8" required></div>
+        <button type="submit" class="btn" id="authNewpassBtn">حفظ كلمة السر</button>
+      </form>
+
+      <div id="authMsg" class="auth-msg"></div>
+    </div>
+  </div>
 
   <!-- Toast Container -->
   <div id="toastContainer" class="toast-container"></div>
@@ -66,7 +97,10 @@
   </div>
 
   <div class="container">
-    <h1>💼 إدارة الخزينة</h1>
+    <div class="page-head">
+      <h1>💼 إدارة الخزينة</h1>
+      <button class="btn-logout" onclick="authLogout()" title="تسجيل الخروج">🚪 خروج</button>
+    </div>
     <div id="syncStatus" class="sync-status" style="display: none;"></div>
 
     <div class="tabs">

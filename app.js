@@ -814,5 +814,123 @@ function setupEventListeners() {
   });
 }
 
-if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
-else init();
+// =====================
+// AUTH — تسجيل الدخول (Supabase Auth)
+// لا يتم تحميل أي بيانات قبل وجود جلسة دخول صالحة
+// =====================
+let appStarted = false;
+async function startApp() {
+  if (appStarted) return;
+  appStarted = true;
+  await init();
+}
+
+function showAuthScreen(mode) {
+  const subs = {
+    login: 'سجّل الدخول للمتابعة',
+    forgot: 'اكتب بريدك وسنرسل لك رابط تغيير كلمة السر',
+    newpass: 'اكتب كلمة السر الجديدة'
+  };
+  document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('authSub').textContent = subs[mode] || '';
+  const forms = { login: 'authLoginForm', forgot: 'authForgotForm', newpass: 'authNewpassForm' };
+  Object.entries(forms).forEach(([m, id]) => {
+    document.getElementById(id).style.display = m === mode ? 'flex' : 'none';
+  });
+  setAuthMsg('');
+}
+
+function hideAuthScreen() { document.getElementById('authScreen').classList.add('hidden'); }
+
+function setAuthMsg(text, type = 'error') {
+  const el = document.getElementById('authMsg');
+  el.textContent = text;
+  el.className = 'auth-msg' + (text ? ' ' + type : '');
+}
+
+function setAuthBusy(btnId, busy, label) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = busy;
+  btn.textContent = busy ? 'لحظة...' : label;
+}
+
+async function authLogin(event) {
+  event.preventDefault();
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  setAuthMsg('');
+  setAuthBusy('authLoginBtn', true);
+  const { error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
+  setAuthBusy('authLoginBtn', false, 'دخول');
+  if (error) {
+    console.error(error);
+    setAuthMsg(error.message === 'Invalid login credentials'
+      ? 'البريد أو كلمة السر غير صحيحة'
+      : 'تعذر تسجيل الدخول — تأكد من الاتصال وحاول مرة أخرى');
+    return;
+  }
+  document.getElementById('authPassword').value = '';
+  hideAuthScreen();
+  startApp();
+}
+
+async function authSendReset(event) {
+  event.preventDefault();
+  const email = document.getElementById('authForgotEmail').value.trim();
+  setAuthMsg('');
+  setAuthBusy('authForgotBtn', true);
+  const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin + location.pathname
+  });
+  setAuthBusy('authForgotBtn', false, 'إرسال رابط تغيير كلمة السر');
+  if (error) {
+    console.error(error);
+    setAuthMsg('تعذر إرسال الرابط — حاول مرة أخرى بعد قليل');
+    return;
+  }
+  setAuthMsg('لو البريد مسجّل، هيوصلك رابط تغيير كلمة السر خلال دقائق', 'ok');
+}
+
+async function authSetNewPassword(event) {
+  event.preventDefault();
+  const p1 = document.getElementById('authNewpass').value;
+  const p2 = document.getElementById('authNewpass2').value;
+  if (p1 !== p2) { setAuthMsg('كلمتا السر غير متطابقتين'); return; }
+  setAuthMsg('');
+  setAuthBusy('authNewpassBtn', true);
+  const { error } = await window.supabaseClient.auth.updateUser({ password: p1 });
+  setAuthBusy('authNewpassBtn', false, 'حفظ كلمة السر');
+  if (error) {
+    console.error(error);
+    setAuthMsg('تعذر حفظ كلمة السر — الرابط قد يكون منتهي، اطلب رابط جديد');
+    return;
+  }
+  window.__authRecovery = false;
+  history.replaceState(null, '', location.pathname);
+  hideAuthScreen();
+  showToast('تم تغيير كلمة السر', 'success');
+  startApp();
+}
+
+async function authLogout() {
+  if (!await showConfirmToast('تسجيل الخروج؟')) return;
+  await window.supabaseClient.auth.signOut();
+  location.reload();
+}
+
+async function authGate() {
+  const sb = window.supabaseClient;
+  if (!sb) { showAuthScreen('login'); setAuthMsg('خطأ في الاتصال بقاعدة البيانات'); return; }
+  sb.auth.onAuthStateChange(event => {
+    if (event === 'PASSWORD_RECOVERY') { window.__authRecovery = true; showAuthScreen('newpass'); }
+  });
+  const { data, error } = await sb.auth.getSession();
+  if (window.__authRecovery) { showAuthScreen('newpass'); return; }
+  if (error || !data?.session) { showAuthScreen('login'); return; }
+  hideAuthScreen();
+  startApp();
+}
+
+if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', authGate);
+else authGate();
