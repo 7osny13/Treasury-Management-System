@@ -144,24 +144,53 @@ function getAccountIcon(key) {
 
 // =====================
 // DATABASE
-// البيانات كلها متخزنة في سطر واحد (id = 1).
-// أي تعديل بيمشي كده:
-//   1) نقرا آخر نسخة من Supabase
-//   2) نطبق التعديل عليها هي (مش على النسخة اللي في الصفحة)
-//   3) نحفظ بشرط إن محدش حفظ بعد ما قرينا — لو حد حفظ، نعيد من الأول
-// كده لو الموبايل واللاب فاتحين مع بعض، محدش بيكتب فوق التاني.
+// - الحسابات: عمود accounts في treasury_data (سطر id = 1)
+// - المعاملات: جدول treasury_transactions — كل معاملة سطر
+// - الأرصدة: بتتحسب من المعاملات (مش متخزنة)
+// - updated_at في treasury_data = "نسخة" البيانات. أي حفظ بيتم عن طريق الدالة treasury_apply
+//   اللي بتنفذ التعديل كله مرة واحدة، وبترفض لو جهاز تاني حفظ بعد ما الصفحة اتحملت
+//   (وساعتها بنحمّل آخر نسخة ونعيد التعديل عليها).
+// - عمود data القديم (الـ JSON الكبير) مبقاش بيتقرا ولا بيتكتب — نسخة احتياطية من يوم النقل.
 // =====================
+const TX_TABLE = 'treasury_transactions';
+const TX_PAGE  = 1000;
+
+function txFromRow(r) {
+  return {
+    id: Number(r.id), date: new Date(r.tx_date).toISOString(), type: r.type, notes: r.notes || '',
+    amount: Number(r.amount), accountTo: r.account_to || null, accountFrom: r.account_from || null
+  };
+}
+
+function txToRow(t) {
+  return {
+    id: Number(t.id), type: t.type, amount: round2(t.amount),
+    account_from: t.accountFrom || null, account_to: t.accountTo || null,
+    notes: t.notes || '', tx_date: new Date(t.date).toISOString()
+  };
+}
+
+function computeBalances(accounts, transactions) {
+  const d = { accounts, balances: {} };
+  Object.keys(accounts).forEach(k => { d.balances[k] = 0; });
+  transactions.forEach(t => applyEffects(d, t, +1));
+  return d.balances;
+}
+
+// نفس الوقت؟ (المقارنة بالأرقام مش بالنص، علشان اختلاف صيغة الكتابة)
+function sameVersion(a, b) {
+  if (!a || !b) return a === b;
+  return new Date(a).getTime() === new Date(b).getTime();
+}
+
 function normalizeData(raw) {
   const d = raw && typeof raw === 'object' ? JSON.parse(JSON.stringify(raw)) : {};
   const accounts = (d.accounts && Object.keys(d.accounts).length > 0) ? d.accounts : JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
   Object.keys(accounts).forEach(k => {
     if (!accounts[k].icon) accounts[k].icon = accounts[k].type === 'wallet' ? '📱' : '🏦';
   });
-  d.accounts = accounts;
-  d.balances = d.balances && typeof d.balances === 'object' ? d.balances : {};
-  Object.keys(accounts).forEach(k => { if (d.balances[k] == null || isNaN(d.balances[k])) d.balances[k] = 0; });
-  d.transactions = Array.isArray(d.transactions) ? d.transactions : [];
-  return d;
+  const transactions = Array.isArray(d.transactions) ? d.transactions : [];
+  return { accounts, balances: computeBalances(accounts, transactions), transactions };
 }
 
 function applyData(d, version) {
@@ -170,21 +199,47 @@ function applyData(d, version) {
   dbVersion = version;
 }
 
-async function fetchLatest() {
+async function fetchMeta() {
   const { data, error } = await window.supabaseClient.from('treasury_data')
-    .select('id,data,updated_at').eq('id', 1).limit(1);
+    .select('accounts,updated_at').eq('id', 1).limit(1);
   if (error) throw error;
-  return data && data.length > 0 ? data[0] : null;
+  const row = data && data.length > 0 ? data[0] : null;
+  if (!row || !row.accounts || !row.updated_at) throw new Error('بيانات الحسابات مش موجودة — اتأكد إن سكريبت النقل اتشغّل');
+  return row;
+}
+
+async function fetchAllTx() {
+  const all = [];
+  for (let from = 0; ; ) {
+    const { data, error } = await window.supabaseClient.from(TX_TABLE)
+      .select('id,type,amount,account_from,account_to,notes,tx_date')
+      .order('id', { ascending: false })
+      .range(from, from + TX_PAGE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    data.forEach(r => all.push(txFromRow(r)));
+    from += data.length;
+  }
+  return all;
+}
+
+// تحميل كامل: الحسابات + كل المعاملات. لو حد حفظ في نص التحميل، نعيد.
+async function loadState() {
+  for (let i = 0; i < 3; i++) {
+    const m1 = await fetchMeta();
+    const transactions = await fetchAllTx();
+    const m2 = await fetchMeta();
+    if (sameVersion(m1.updated_at, m2.updated_at)) {
+      return { data: normalizeData({ accounts: m2.accounts, transactions }), version: m2.updated_at };
+    }
+  }
+  throw new Error('البيانات بتتغير أثناء التحميل — حاول تاني');
 }
 
 async function loadFromDatabase() {
   try {
-    const row = await fetchLatest();
-    if (row && row.data) {
-      applyData(normalizeData(row.data), row.updated_at);
-    } else {
-      applyData(normalizeData({}), null);
-    }
+    const s = await loadState();
+    applyData(s.data, s.version);
     loadOk = true;
     updateUI();
     showSyncStatus('✅ تم التحميل', 'success');
@@ -202,9 +257,11 @@ async function refreshIfChanged() {
   if (!loadOk || committing || isSaving) return;
   if (document.querySelector('.modal-overlay.modal-show, .confirm-overlay')) return;
   try {
-    const row = await fetchLatest();
-    if (row && row.updated_at !== dbVersion) {
-      applyData(normalizeData(row.data), row.updated_at);
+    const m = await fetchMeta();
+    if (!sameVersion(m.updated_at, dbVersion)) {
+      const s = await loadState();
+      if (committing || isSaving) return;
+      applyData(s.data, s.version);
       updateUI();
       if (document.getElementById('statistics')?.classList.contains('active')) updateStatisticsTab();
       showToast('تم تحديث البيانات بآخر تعديلات', 'info');
@@ -215,54 +272,66 @@ async function refreshIfChanged() {
 // op(d) بتعدّل نسخة البيانات d وترجع:
 //   null / undefined = تمام
 //   نص = رسالة خطأ (مفيش حفظ)
-async function commit(op) {
+// replace = true: استبدال كل المعاملات (الاستيراد / حذف الكل)
+async function commit(op, replace = false) {
   if (!loadOk) { showToast('البيانات لم تُحمّل بشكل صحيح — اعمل تحديث للصفحة قبل أي تعديل', 'error'); return false; }
   if (committing) return false;
   committing = true;
+  let changedElsewhere = false;
   try {
     for (let attempt = 0; attempt < 4; attempt++) {
-      let row;
-      try { row = await fetchLatest(); }
-      catch (e) { showToast('تعذر الاتصال بقاعدة البيانات — لم يتم الحفظ', 'error'); return false; }
+      let meta;
+      try { meta = await fetchMeta(); }
+      catch (e) { console.error(e); showToast('تعذر الاتصال بقاعدة البيانات — لم يتم الحفظ', 'error'); return false; }
 
-      // الجدول فاضي بينما الصفحة فيها بيانات = حاجة غلط؛ متكتبش
-      if (!row && (dbVersion !== null || appData.transactions.length > 0)) {
-        showToast('تعذر قراءة البيانات من قاعدة البيانات — لم يتم الحفظ', 'error');
-        return false;
+      // جهاز تاني حفظ → نحمّل آخر نسخة الأول، ونطبق التعديل عليها
+      if (!sameVersion(meta.updated_at, dbVersion)) {
+        try {
+          const s = await loadState();
+          applyData(s.data, s.version);
+          updateUI();
+          changedElsewhere = true;
+        } catch (e) { console.error(e); showToast('تعذر تحميل آخر نسخة — لم يتم الحفظ', 'error'); return false; }
       }
 
-      const changedElsewhere = !!row && row.updated_at !== dbVersion;
-      const base = row ? normalizeData(row.data) : normalizeData(appData);
-      if (changedElsewhere) { applyData(normalizeData(row.data), row.updated_at); updateUI(); }
-
+      const base = JSON.parse(JSON.stringify(appData));
       const err = op(base);
       if (err) { showToast(err, 'warning'); return false; }
 
-      const now = new Date().toISOString();
-      let res;
-      if (row) {
-        res = await window.supabaseClient.from('treasury_data')
-          .update({ data: base, updated_at: now }).eq('id', 1).eq('updated_at', row.updated_at).select('updated_at');
-        // صفر سطور = حد حفظ بعد ما قرينا… أو إن صيغة الوقت مختلفة.
-        // نقرا تاني: لو الوقت زي ما هو يبقى مفيش حد حفظ، فنحفظ من غير شرط.
-        if (!res.error && (!res.data || res.data.length === 0)) {
-          const again = await fetchLatest().catch(() => null);
-          if (again && again.updated_at === row.updated_at) {
-            res = await window.supabaseClient.from('treasury_data')
-              .update({ data: base, updated_at: now }).eq('id', 1).select('updated_at');
-          } else {
-            continue; // جهاز تاني حفظ — نعيد على أحدث نسخة
-          }
-        }
+      // الفرق بين قبل وبعد: معاملات جديدة/متعدلة، ومعاملات اتحذفت
+      let upsert = [], del = [];
+      if (replace) {
+        upsert = base.transactions.map(txToRow);
       } else {
-        res = await window.supabaseClient.from('treasury_data')
-          .insert({ id: 1, data: base, updated_at: now }).select('updated_at');
+        const before = new Map(appData.transactions.map(t => [t.id, JSON.stringify(txToRow(t))]));
+        const after = new Set();
+        base.transactions.forEach(t => {
+          after.add(t.id);
+          const row = txToRow(t);
+          if (before.get(t.id) !== JSON.stringify(row)) upsert.push(row);
+        });
+        before.forEach((_, id) => { if (!after.has(id)) del.push(id); });
       }
+      const accountsChanged = replace || JSON.stringify(base.accounts) !== JSON.stringify(appData.accounts);
 
-      if (res.error) { console.error(res.error); showToast('خطأ في الحفظ: ' + res.error.message, 'error'); return false; }
-      if (!res.data || res.data.length === 0) { showToast('لم يتم الحفظ — حاول مرة أخرى', 'error'); return false; }
+      const { data: newVersion, error } = await window.supabaseClient.rpc('treasury_apply', {
+        p_version: dbVersion,
+        p_accounts: accountsChanged ? base.accounts : null,
+        p_upsert: upsert,
+        p_delete: del,
+        p_replace: replace
+      });
+      if (error) {
+        if (String(error.message || '').includes('TREASURY_CONFLICT')) continue; // جهاز تاني سبقنا — نعيد
+        console.error(error);
+        showToast('خطأ في الحفظ: ' + error.message, 'error');
+        return false;
+      }
+      if (!newVersion) { showToast('لم يتم الحفظ — حاول مرة أخرى', 'error'); return false; }
 
-      applyData(base, res.data[0].updated_at);
+      const saved = normalizeData(base);
+      saved.transactions.sort((a, b) => b.id - a.id);
+      applyData(saved, newVersion);
       updateUI();
       if (document.getElementById('statistics')?.classList.contains('active')) updateStatisticsTab();
       if (changedElsewhere) showToast('كان فيه تعديل من جهاز تاني — اتحفظ تعديلك فوق آخر نسخة', 'info');
@@ -944,14 +1013,25 @@ async function importData() {
       showToast('الملف مش نسخة احتياطية من الخزينة — مفيهوش حسابات ومعاملات','error'); return;
     }
     const clean = normalizeData(imp);
-    delete clean.exported_at;
+    // فحص المعاملات قبل أي حاجة — نفس شروط الجدول في Supabase
+    const ids = new Set();
+    const bad = clean.transactions.find(t => {
+      const okType = t.type === 'income' ? !!t.accountTo : t.type === 'expense' ? !!t.accountFrom
+                   : t.type === 'transfer' ? !!(t.accountFrom && t.accountTo) : false;
+      const okId = Number.isSafeInteger(Number(t.id)) && !ids.has(Number(t.id)); ids.add(Number(t.id));
+      return !okType || !okId || !(Number(t.amount) > 0) || isNaN(new Date(t.date).getTime());
+    });
+    if (bad) { showToast('الملف فيه معاملة ناقصة أو مكررة — الاستيراد اتلغى', 'error'); console.warn('bad tx', bad); return; }
+    // الأرصدة بتتحسب من المعاملات — لو الملف فيه أرصدة مختلفة، ننبه
+    const diffAcc = Object.keys(clean.accounts).filter(k => imp.balances[k] != null && Math.abs(Number(imp.balances[k]) - clean.balances[k]) > 0.01);
+    const balWarn = diffAcc.length ? `<br><br>⚠️ أرصدة ${diffAcc.map(k => `"${esc(clean.accounts[k].name)}"`).join(' و ')} في الملف مختلفة عن مجموع معاملاتها — الموقع هيعتمد مجموع المعاملات.` : '';
     const msg = `الملف فيه <b>${clean.transactions.length}</b> معاملة و <b>${Object.keys(clean.accounts).length}</b> حساب.<br>` +
-      `هيتم استبدال البيانات الحالية بالكامل (<b>${appData.transactions.length}</b> معاملة).<br>أي معاملة اتسجلت بعد تاريخ الملف هتضيع.`;
+      `هيتم استبدال البيانات الحالية بالكامل (<b>${appData.transactions.length}</b> معاملة).<br>أي معاملة اتسجلت بعد تاريخ الملف هتضيع.` + balWarn;
     if (!await showTypedConfirm(msg, 'استبدال')) return;
     const ok = await commit(d => {
       Object.keys(d).forEach(k => delete d[k]);
       Object.assign(d, clean);
-    });
+    }, true);
     if (ok) { showToast('تم الاستيراد بنجاح','success'); showTab('dashboard'); }
   };
   reader.readAsText(file);
@@ -964,7 +1044,7 @@ async function clearAllData() {
     const fresh = normalizeData({ accounts: JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS)) });
     Object.keys(d).forEach(k => delete d[k]);
     Object.assign(d, fresh);
-  });
+  }, true);
   if (ok) { showToast('تم حذف جميع البيانات','info'); showTab('dashboard'); }
 }
 
