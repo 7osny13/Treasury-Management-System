@@ -89,8 +89,10 @@ function showTypedConfirm(message, word) {
 // UTILS
 // =====================
 function formatNumber(num) {
-  if (num === undefined || num === null || isNaN(num)) num = 0;
-  return Number(num).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (num === undefined || num === null || isNaN(num) || Math.abs(num) < 0.005) num = 0;
+  // كسور حقيقية بس: 15000 → 15,000 — 2350.5 → 2,350.5 — 1234.56 → 1,234.56
+  const [int, dec] = Number(num).toFixed(2).replace(/\.?0+$/, '').split('.');
+  return int.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (dec ? '.' + dec : '');
 }
 
 // منع أي نص من المستخدم (ملاحظات / أسماء) إنه يتفسر كـ HTML
