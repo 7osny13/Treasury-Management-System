@@ -7,6 +7,9 @@
   <script>window.__authRecovery = (location.hash + location.search).includes('type=recovery');</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <meta name="theme-color" content="#ffffff">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -140,13 +143,13 @@
           <strong id="walletTotal">0.00 جنيه</strong>
         </div>
       </div>
-      <h2 style="margin-bottom: 20px; color: #667eea;">الأرصدة الحالية</h2>
+      <h2 style="margin-bottom: 20px; color: var(--primary);">الأرصدة الحالية</h2>
       <div class="balance-grid" id="balanceGrid"></div>
     </div>
 
     <!-- Add Transaction Tab -->
     <div id="add-transaction" class="tab-content">
-      <h2 style="margin-bottom: 20px; color: #667eea;">إضافة معاملة جديدة</h2>
+      <h2 style="margin-bottom: 20px; color: var(--primary);">إضافة معاملة جديدة</h2>
       <div class="form-group">
         <label>نوع المعاملة</label>
         <select id="transactionType">
@@ -180,7 +183,7 @@
 
     <!-- Transactions Tab -->
     <div id="transactions" class="tab-content">
-      <h2 style="margin-bottom: 16px; color: #667eea;">سجل المعاملات</h2>
+      <h2 style="margin-bottom: 16px; color: var(--primary);">سجل المعاملات</h2>
       <div class="filter-bar">
         <div class="filter-row">
           <input type="text" id="searchInput" placeholder="🔍 بحث في الملاحظات أو المبلغ..." class="search-input">
@@ -210,7 +213,7 @@
     <!-- Accounts Management Tab -->
     <div id="accounts-manage" class="tab-content">
       <div class="accounts-header">
-        <h2 style="color: #667eea;">إدارة الحسابات</h2>
+        <h2 style="color: var(--primary);">إدارة الحسابات</h2>
         <button class="btn-add-account" id="addAccountBtn">+ إضافة حساب</button>
       </div>
       <p class="accounts-hint">يمكنك إضافة بنوك أو محافظ جديدة، وتعديل أسمائها وأيقوناتها أو حذفها.</p>
@@ -220,7 +223,7 @@
     <!-- Statistics Tab -->
     <div id="statistics" class="tab-content">
       <div class="stats-header">
-        <h2 style="color: #667eea;">الإحصائيات الشهرية</h2>
+        <h2 style="color: var(--primary);">الإحصائيات الشهرية</h2>
         <div class="month-picker">
           <button class="month-nav" id="prevMonth">&#8250;</button>
           <span id="currentMonthLabel"></span>
@@ -248,14 +251,14 @@
 
     <!-- Report Tab -->
     <div id="report" class="tab-content">
-      <h2 style="margin-bottom: 20px; color: #667eea;">التقرير اليومي</h2>
+      <h2 style="margin-bottom: 20px; color: var(--primary);">التقرير اليومي</h2>
       <div id="reportContent"></div>
       <button class="btn whatsapp-btn" id="shareReportBtn">📱 مشاركة على الواتساب</button>
     </div>
 
     <!-- Backup Tab -->
     <div id="backup" class="tab-content">
-      <h2 style="margin-bottom: 20px; color: #667eea;">النسخ الاحتياطي</h2>
+      <h2 style="margin-bottom: 20px; color: var(--primary);">النسخ الاحتياطي</h2>
       <div class="report-section">
         <h3>📥 تصدير البيانات</h3>
         <p style="margin-bottom: 15px; color: #666;">احفظ نسخة احتياطية من جميع بياناتك</p>

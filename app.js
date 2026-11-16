@@ -1,3 +1,4 @@
+if (window.Chart) Chart.defaults.font.family = "'Readex Pro', system-ui, sans-serif";
 // Treasury Management Application
 // Phase D — Prevent Duplicate, Edit Transaction, Quick Search, Custom Icons
 
@@ -566,8 +567,8 @@ function renderMonthlyCompareChart() {
   chartInstances['monthlyCompare'] = new Chart(ctx, {
     type: 'bar',
     data: { labels, datasets: [
-      { label: 'إيداعات', data: incomes,  backgroundColor: 'rgba(40,167,69,0.75)',  borderColor: '#28a745', borderWidth: 2, borderRadius: 6 },
-      { label: 'سحوبات',  data: expenses, backgroundColor: 'rgba(220,53,69,0.75)', borderColor: '#dc3545', borderWidth: 2, borderRadius: 6 }
+      { label: 'إيداعات', data: incomes,  backgroundColor: 'rgba(26,138,95,0.8)',  borderColor: '#1a8a5f', borderWidth: 2, borderRadius: 6 },
+      { label: 'سحوبات',  data: expenses, backgroundColor: 'rgba(214,69,61,0.8)', borderColor: '#d6453d', borderWidth: 2, borderRadius: 6 }
     ]},
     options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => formatNumber(v) } } } }
   });
@@ -588,7 +589,7 @@ function renderBalanceTrendChart() {
   const ctx = document.getElementById('balanceTrendChart').getContext('2d');
   chartInstances['balanceTrend'] = new Chart(ctx, {
     type: 'line',
-    data: { labels: sampled.map(p=>p.x), datasets: [{ label: 'الرصيد الإجمالي', data: sampled.map(p=>p.y), borderColor: '#667eea', backgroundColor: 'rgba(102,126,234,0.1)', fill: true, tension: 0.4, pointRadius: sampled.length < 15 ? 4 : 2, borderWidth: 2 }] },
+    data: { labels: sampled.map(p=>p.x), datasets: [{ label: 'الرصيد الإجمالي', data: sampled.map(p=>p.y), borderColor: '#0b5563', backgroundColor: 'rgba(18,163,168,0.12)', fill: true, tension: 0.4, pointRadius: sampled.length < 15 ? 4 : 2, borderWidth: 2 }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => formatNumber(v) } }, x: { ticks: { maxRotation: 45 } } } }
   });
 }
@@ -598,7 +599,7 @@ function renderBalanceDistChart() {
   const keys   = Object.keys(ACCOUNTS).filter(k => (appData.balances[k]||0) > 0);
   const labels = keys.map(k => ACCOUNTS[k].name);
   const values = keys.map(k => appData.balances[k]||0);
-  const colors = ['#667eea','#28a745','#ffc107','#17a2b8','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6c757d'];
+  const colors = ['#0b5563','#12a3a8','#ef6f4f','#1a8a5f','#2471a3','#d6453d','#f2a541','#7fc8c9','#8a6fb0','#8a9ea2'];
   if (!values.length) { document.getElementById('balanceDistChart').parentElement.innerHTML='<p class="empty-state">لا يوجد رصيد</p>'; return; }
   const ctx = document.getElementById('balanceDistChart').getContext('2d');
   chartInstances['balanceDist'] = new Chart(ctx, {
@@ -618,7 +619,7 @@ function renderTypeDistChart() {
   const ctx = document.getElementById('typeDistChart').getContext('2d');
   chartInstances['typeDist'] = new Chart(ctx, {
     type: 'pie',
-    data: { labels: ['إيداع','سحب','تحويل'], datasets: [{ data: [inc,exp,tra], backgroundColor: ['#28a745','#dc3545','#667eea'], borderWidth: 2 }] },
+    data: { labels: ['إيداع','سحب','تحويل'], datasets: [{ data: [inc,exp,tra], backgroundColor: ['#1a8a5f','#d6453d','#0b5563'], borderWidth: 2 }] },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 }
@@ -633,8 +634,8 @@ function renderAccountsBarChart(monthTx) {
   chartInstances['accountsBar'] = new Chart(ctx, {
     type: 'bar',
     data: { labels, datasets: [
-      { label: 'إيداعات', data: incomes,  backgroundColor: 'rgba(40,167,69,0.75)',  borderRadius: 5 },
-      { label: 'سحوبات',  data: expenses, backgroundColor: 'rgba(220,53,69,0.75)', borderRadius: 5 }
+      { label: 'إيداعات', data: incomes,  backgroundColor: 'rgba(26,138,95,0.8)',  borderRadius: 5 },
+      { label: 'سحوبات',  data: expenses, backgroundColor: 'rgba(214,69,61,0.8)', borderRadius: 5 }
     ]},
     options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => formatNumber(v) } }, x: { ticks: { maxRotation: 30, font: { size: 11 } } } } }
   });
