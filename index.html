@@ -17,7 +17,7 @@
   <!-- AUTH SCREEN -->
   <div id="authScreen" class="auth-screen">
     <div class="auth-card">
-      <div class="auth-logo">💼</div>
+      <div class="auth-logo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5V7M12 17v-1.5M7 20v1.5M17 20v1.5"/></svg></div>
       <h2 class="auth-title">إدارة الخزينة</h2>
       <p class="auth-sub" id="authSub">جاري التحقق...</p>
 
@@ -69,7 +69,7 @@
         <div id="iconPicker" class="icon-picker"></div>
       </div>
       <div class="modal-buttons">
-        <button class="btn btn-success" id="saveAccountBtn">💾 حفظ</button>
+        <button class="btn btn-success" id="saveAccountBtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> حفظ</button>
         <button class="btn btn-secondary" id="cancelAccountBtn">إلغاء</button>
       </div>
     </div>
@@ -78,7 +78,7 @@
   <!-- Edit Transaction Modal -->
   <div id="editTransactionModal" class="modal-overlay">
     <div class="modal-dialog">
-      <h3>✏️ تعديل المعاملة</h3>
+      <h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg> تعديل المعاملة</h3>
       <input type="hidden" id="editTxId">
       <div class="edit-tx-info">
         <span id="editTxTypeLabel" class="edit-tx-type"></span>
@@ -97,7 +97,7 @@
         <textarea id="editTxNotes" placeholder="ملاحظة..."></textarea>
       </div>
       <div class="modal-buttons">
-        <button class="btn btn-success" id="saveEditTxBtn">💾 حفظ التعديل</button>
+        <button class="btn btn-success" id="saveEditTxBtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> حفظ التعديل</button>
         <button class="btn btn-secondary" id="cancelEditTxBtn">إلغاء</button>
       </div>
     </div>
@@ -105,19 +105,19 @@
 
   <div class="container">
     <div class="page-head">
-      <h1>💼 إدارة الخزينة</h1>
-      <button class="btn-logout" onclick="authLogout()" title="تسجيل الخروج">🚪 خروج</button>
+      <h1><span class="logo-mark"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5V7M12 17v-1.5M7 20v1.5M17 20v1.5"/></svg></span> إدارة الخزينة</h1>
+      <button class="btn-logout" onclick="authLogout()" title="تسجيل الخروج"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 12H3"/><path d="M6 8l-3 4 3 4"/></svg><span class="logout-txt"> خروج</span></button>
     </div>
     <div id="syncStatus" class="sync-status" style="display: none;"></div>
 
     <div class="tabs">
-      <button class="tab active" data-tab="dashboard">لوحة التحكم</button>
-      <button class="tab" data-tab="add-transaction">إضافة معاملة</button>
-      <button class="tab" data-tab="transactions">المعاملات</button>
-      <button class="tab" data-tab="accounts-manage">الحسابات</button>
-      <button class="tab" data-tab="statistics">الإحصائيات</button>
-      <button class="tab" data-tab="report">التقرير</button>
-      <button class="tab" data-tab="backup">النسخ الاحتياطي</button>
+      <button class="tab active" data-tab="dashboard"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> لوحة التحكم</button>
+      <button class="tab" data-tab="add-transaction"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> إضافة معاملة</button>
+      <button class="tab" data-tab="transactions"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg> المعاملات</button>
+      <button class="tab" data-tab="accounts-manage"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2z"/><path d="M17 14h.01"/></svg> الحسابات</button>
+      <button class="tab" data-tab="statistics"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg> الإحصائيات</button>
+      <button class="tab" data-tab="report"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg> التقرير</button>
+      <button class="tab" data-tab="backup"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg> النسخ الاحتياطي</button>
     </div>
 
     <!-- Dashboard Tab -->
@@ -125,7 +125,7 @@
 
       <!-- ② Quick Search -->
       <div class="quick-search-wrap">
-        <input type="text" id="quickSearchInput" class="quick-search-input" placeholder="🔍 بحث سريع في المعاملات...">
+        <input type="text" id="quickSearchInput" class="quick-search-input" placeholder="بحث سريع في المعاملات...">
         <div id="quickSearchResults" class="quick-search-results" style="display:none;"></div>
       </div>
 
@@ -135,11 +135,11 @@
       </div>
       <div class="summary-row">
         <div class="summary-card">
-          <span>🏦 البنوك</span>
+          <span><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 21h18"/></svg> البنوك</span>
           <strong id="bankTotal">0 جنيه</strong>
         </div>
         <div class="summary-card">
-          <span>📱 المحافظ</span>
+          <span><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg> المحافظ</span>
           <strong id="walletTotal">0 جنيه</strong>
         </div>
       </div>
@@ -178,7 +178,7 @@
         <label>الملاحظات</label>
         <textarea id="notes" placeholder="ملاحظة عن المعاملة..."></textarea>
       </div>
-      <button class="btn" id="addTransactionBtn">💾 حفظ المعاملة</button>
+      <button class="btn" id="addTransactionBtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> حفظ المعاملة</button>
     </div>
 
     <!-- Transactions Tab -->
@@ -186,7 +186,7 @@
       <h2 style="margin-bottom: 16px; color: var(--primary);">سجل المعاملات</h2>
       <div class="filter-bar">
         <div class="filter-row">
-          <input type="text" id="searchInput" placeholder="🔍 بحث في الملاحظات أو المبلغ..." class="search-input">
+          <input type="text" id="searchInput" placeholder="بحث في الملاحظات أو المبلغ..." class="search-input">
         </div>
         <div class="filter-row">
           <select id="filterType" class="filter-select">
@@ -203,7 +203,7 @@
           <input type="date" id="filterDateFrom" class="filter-date">
           <span class="date-separator">←</span>
           <input type="date" id="filterDateTo" class="filter-date">
-          <button id="resetFiltersBtn" class="btn-reset">↺ إعادة تعيين</button>
+          <button id="resetFiltersBtn" class="btn-reset"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v4h4"/></svg> إعادة تعيين</button>
         </div>
         <div class="filter-count"><span id="transactionsCount"></span></div>
       </div>
@@ -231,49 +231,49 @@
         </div>
       </div>
       <div class="kpi-grid">
-        <div class="kpi-card kpi-income"><div class="kpi-icon">💰</div><div class="kpi-label">إجمالي الإيداعات</div><div class="kpi-value" id="kpiIncome">0 جنيه</div></div>
-        <div class="kpi-card kpi-expense"><div class="kpi-icon">💸</div><div class="kpi-label">إجمالي السحوبات</div><div class="kpi-value" id="kpiExpense">0 جنيه</div></div>
-        <div class="kpi-card kpi-net"><div class="kpi-icon">📊</div><div class="kpi-label">صافي الشهر</div><div class="kpi-value" id="kpiNet">0 جنيه</div></div>
-        <div class="kpi-card kpi-count"><div class="kpi-icon">🔢</div><div class="kpi-label">عدد المعاملات</div><div class="kpi-value" id="kpiCount">0</div></div>
+        <div class="kpi-card kpi-income"><div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg></div><div class="kpi-label">إجمالي الإيداعات</div><div class="kpi-value" id="kpiIncome">0 جنيه</div></div>
+        <div class="kpi-card kpi-expense"><div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></svg></div><div class="kpi-label">إجمالي السحوبات</div><div class="kpi-value" id="kpiExpense">0 جنيه</div></div>
+        <div class="kpi-card kpi-net"><div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div><div class="kpi-label">صافي الشهر</div><div class="kpi-value" id="kpiNet">0 جنيه</div></div>
+        <div class="kpi-card kpi-count"><div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg></div><div class="kpi-label">عدد المعاملات</div><div class="kpi-value" id="kpiCount">0</div></div>
       </div>
       <div class="stats-row">
-        <div class="stat-box"><h4>🏆 أكثر حساب إيداعاً</h4><div id="topIncomeAccount" class="stat-highlight">—</div></div>
-        <div class="stat-box"><h4>📉 أكثر حساب سحباً</h4><div id="topExpenseAccount" class="stat-highlight">—</div></div>
+        <div class="stat-box"><h4><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg> أكثر حساب إيداعاً</h4><div id="topIncomeAccount" class="stat-highlight">—</div></div>
+        <div class="stat-box"><h4><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 6 4-4 8 8"/><path d="M14 17h7v-7"/></svg> أكثر حساب سحباً</h4><div id="topExpenseAccount" class="stat-highlight">—</div></div>
       </div>
-      <div class="chart-card"><h3>📅 مقارنة الأشهر (آخر 6 أشهر)</h3><div class="chart-wrap"><canvas id="monthlyCompareChart"></canvas></div></div>
-      <div class="chart-card"><h3>📈 تطور الرصيد الإجمالي</h3><div class="chart-wrap"><canvas id="balanceTrendChart"></canvas></div></div>
+      <div class="chart-card"><h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> مقارنة الأشهر (آخر 6 أشهر)</h3><div class="chart-wrap"><canvas id="monthlyCompareChart"></canvas></div></div>
+      <div class="chart-card"><h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> تطور الرصيد الإجمالي</h3><div class="chart-wrap"><canvas id="balanceTrendChart"></canvas></div></div>
       <div class="charts-two-col">
-        <div class="chart-card"><h3>🏦 توزيع الرصيد على الحسابات</h3><div class="chart-wrap chart-wrap-sm"><canvas id="balanceDistChart"></canvas></div></div>
-        <div class="chart-card"><h3>🥧 توزيع أنواع المعاملات</h3><div class="chart-wrap chart-wrap-sm"><canvas id="typeDistChart"></canvas></div></div>
+        <div class="chart-card"><h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 21h18"/></svg> توزيع الرصيد على الحسابات</h3><div class="chart-wrap chart-wrap-sm"><canvas id="balanceDistChart"></canvas></div></div>
+        <div class="chart-card"><h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg> توزيع أنواع المعاملات</h3><div class="chart-wrap chart-wrap-sm"><canvas id="typeDistChart"></canvas></div></div>
       </div>
-      <div class="chart-card"><h3>📊 مقارنة الحسابات (الشهر الحالي)</h3><div class="chart-wrap"><canvas id="accountsBarChart"></canvas></div></div>
+      <div class="chart-card"><h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg> مقارنة الحسابات (الشهر الحالي)</h3><div class="chart-wrap"><canvas id="accountsBarChart"></canvas></div></div>
     </div>
 
     <!-- Report Tab -->
     <div id="report" class="tab-content">
       <h2 style="margin-bottom: 20px; color: var(--primary);">التقرير اليومي</h2>
       <div id="reportContent"></div>
-      <button class="btn whatsapp-btn" id="shareReportBtn">📱 مشاركة على الواتساب</button>
+      <button class="btn whatsapp-btn" id="shareReportBtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12c0 4.4-4 8-9 8-1.4 0-2.8-.3-4-.8L3 20l1.3-3.9C3.5 14.9 3 13.5 3 12c0-4.4 4-8 9-8s9 3.6 9 8z"/></svg> مشاركة على الواتساب</button>
     </div>
 
     <!-- Backup Tab -->
     <div id="backup" class="tab-content">
       <h2 style="margin-bottom: 20px; color: var(--primary);">النسخ الاحتياطي</h2>
       <div class="report-section">
-        <h3>📥 تصدير البيانات</h3>
+        <h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M4 19v1h16v-1"/></svg> تصدير البيانات</h3>
         <p style="margin-bottom: 15px; color: #666;">احفظ نسخة احتياطية من جميع بياناتك</p>
-        <button class="btn btn-success" id="exportBtn">📥 تصدير البيانات</button>
+        <button class="btn btn-success" id="exportBtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M4 19v1h16v-1"/></svg> تصدير البيانات</button>
       </div>
       <div class="report-section">
-        <h3>📤 استيراد البيانات</h3>
+        <h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="M7 9l5-5 5 5"/><path d="M4 19v1h16v-1"/></svg> استيراد البيانات</h3>
         <p style="margin-bottom: 15px; color: #666;">استعادة البيانات من نسخة احتياطية سابقة</p>
         <input type="file" id="importFile" accept=".json" style="margin-bottom: 15px;">
-        <button class="btn btn-secondary" id="importBtn">📤 استيراد البيانات</button>
+        <button class="btn btn-secondary" id="importBtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="M7 9l5-5 5 5"/><path d="M4 19v1h16v-1"/></svg> استيراد البيانات</button>
       </div>
       <div class="report-section">
-        <h3>⚠️ حذف جميع البيانات</h3>
+        <h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg> حذف جميع البيانات</h3>
         <p style="margin-bottom: 15px; color: #dc3545;">تحذير: هذا الإجراء لا يمكن التراجع عنه!</p>
-        <button class="btn btn-danger" id="clearBtn">🗑️ حذف جميع البيانات</button>
+        <button class="btn btn-danger" id="clearBtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg> حذف جميع البيانات</button>
       </div>
     </div>
 
@@ -281,5 +281,14 @@
 
   <script src="config.js"></script>
   <script src="app.js"></script>
+  <nav class="bottom-nav">
+    <button class="bnav-btn active" data-tab="dashboard"><span class="bnav-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>الرئيسية</button>
+    <button class="bnav-btn" data-tab="transactions"><span class="bnav-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span>المعاملات</button>
+    <button class="bnav-btn" data-tab="accounts-manage"><span class="bnav-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2z"/><path d="M17 14h.01"/></svg></span>الحسابات</button>
+    <button class="bnav-btn bnav-add" data-tab="add-transaction"><span class="bnav-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>إضافة</button>
+    <button class="bnav-btn" data-tab="statistics"><span class="bnav-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg></span>الإحصائيات</button>
+    <button class="bnav-btn" data-tab="report"><span class="bnav-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span>التقرير</button>
+    <button class="bnav-btn" data-tab="backup"><span class="bnav-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span>النسخ</button>
+  </nav>
 </body>
 </html>

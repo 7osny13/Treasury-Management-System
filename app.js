@@ -1,5 +1,15 @@
 if (window.Chart) Chart.defaults.font.family = "'Readex Pro', system-ui, sans-serif";
 // Treasury Management Application
+// أيقونات مرسومة (نفس ستايل موقع العقارات)
+const ICO = {
+  in: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg>',
+  out: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></svg>',
+  swap: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/></svg>',
+  note: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>',
+  clock: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  edit: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  trash: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>',
+};
 // Phase D — Prevent Duplicate, Edit Transaction, Quick Search, Custom Icons
 
 const DEFAULT_ACCOUNTS = {
@@ -481,7 +491,7 @@ function doQuickSearch() {
 
   resultsEl.innerHTML = results.map(t => {
     const date = new Date(t.date).toLocaleDateString('ar-EG');
-    const typeIcon = t.type==='income'?'💰':t.type==='expense'?'💸':'🔄';
+    const typeIcon = ICO[t.type==='income'?'in':t.type==='expense'?'out':'swap'];
     return `<div class="qs-item" onclick="goToTransaction(${t.id})">
       <span class="qs-icon">${typeIcon}</span>
       <div class="qs-info">
@@ -694,21 +704,21 @@ function renderFilteredTransactions() {
     const date    = new Date(t.date);
     const dateStr = date.toLocaleDateString('ar-EG')+' '+date.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
     let typeText='', details='', typeClass='';
-    if (t.type==='income')       { typeText='💰 إيداع';  typeClass='type-income';   details=`إلى: ${esc(getAccountName(t.accountTo))}`; }
-    else if (t.type==='expense') { typeText='💸 سحب';    typeClass='type-expense';  details=`من: ${esc(getAccountName(t.accountFrom))}`; }
-    else                         { typeText='🔄 تحويل';  typeClass='type-transfer'; details=`من: ${esc(getAccountName(t.accountFrom))} ← إلى: ${esc(getAccountName(t.accountTo))}`; }
+    if (t.type==='income')       { typeText=ICO.in+' إيداع';  typeClass='type-income';   details=`إلى: ${esc(getAccountName(t.accountTo))}`; }
+    else if (t.type==='expense') { typeText=ICO.out+' سحب';    typeClass='type-expense';  details=`من: ${esc(getAccountName(t.accountFrom))}`; }
+    else                         { typeText=ICO.swap+' تحويل';  typeClass='type-transfer'; details=`من: ${esc(getAccountName(t.accountFrom))} ← إلى: ${esc(getAccountName(t.accountTo))}`; }
     return `<div class="transaction-item ${t.type}" data-id="${t.id}">
       <div class="transaction-header">
         <span class="transaction-type ${typeClass}">${typeText}</span>
         <span class="transaction-amount">${formatNumber(t.amount)} جنيه</span>
       </div>
       <div class="transaction-details">${details}</div>
-      ${t.notes?`<div class="transaction-notes">📝 ${esc(t.notes)}</div>`:''}
+      ${t.notes?`<div class="transaction-notes">${ICO.note} ${esc(t.notes)}</div>`:''}
       <div class="transaction-footer">
-        <span class="transaction-date">🕐 ${dateStr}</span>
+        <span class="transaction-date">${ICO.clock} ${dateStr}</span>
         <div class="transaction-actions">
-          <button class="edit-btn" onclick="openEditTransaction(${t.id})">✏️ تعديل</button>
-          <button class="delete-btn" onclick="deleteTransaction(${t.id})">🗑️ حذف</button>
+          <button class="edit-btn" onclick="openEditTransaction(${t.id})">${ICO.edit} تعديل</button>
+          <button class="delete-btn" onclick="deleteTransaction(${t.id})">${ICO.trash} حذف</button>
         </div>
       </div>
     </div>`;
@@ -743,8 +753,8 @@ function openEditTransaction(id) {
   dateEl.max = localDateStr();
   dateEl.dataset.original = localDateStr(t.date);
 
-  const typeLabels = { income: '💰 إيداع', expense: '💸 سحب', transfer: '🔄 تحويل' };
-  document.getElementById('editTxTypeLabel').textContent = typeLabels[t.type] || t.type;
+  const typeLabels = { income: ICO.in+' إيداع', expense: ICO.out+' سحب', transfer: ICO.swap+' تحويل' };
+  document.getElementById('editTxTypeLabel').innerHTML = typeLabels[t.type] || esc(t.type);
 
   let accountInfo = '';
   if (t.type === 'income')   accountInfo = `إلى: ${getAccountName(t.accountTo)}`;
@@ -842,8 +852,8 @@ async function addTransaction() {
 
   isSaving = true;
   const btn = document.getElementById('addTransactionBtn');
-  const originalText = btn.textContent;
-  btn.textContent = '⏳ جاري الحفظ...';
+  const originalText = btn.innerHTML;
+  btn.textContent = 'جاري الحفظ...';
   btn.disabled = true;
 
   const saved = await commit(d => {
@@ -875,7 +885,7 @@ async function addTransaction() {
 function resetSaveBtn(btn, text) {
   setTimeout(() => {
     isSaving = false;
-    btn.textContent = text;
+    btn.innerHTML = text;
     btn.disabled = false;
   }, 1000);
 }
@@ -962,11 +972,11 @@ async function clearAllData() {
 // TAB NAVIGATION
 // =====================
 function showTab(tabName) {
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  // التبويبات فوق (اللاب) + الشريط تحت (الموبايل)
+  document.querySelectorAll('[data-tab]').forEach(t=>t.classList.toggle('active', t.getAttribute('data-tab')===tabName));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-  const target=document.querySelector(`[data-tab="${tabName}"]`);
-  if(target) target.classList.add('active');
   document.getElementById(tabName).classList.add('active');
+  window.scrollTo(0, 0);
   if (tabName==='statistics') updateStatisticsTab();
 }
 
@@ -986,7 +996,7 @@ async function init() {
 }
 
 function setupEventListeners() {
-  document.querySelectorAll('.tab').forEach(tab=>{
+  document.querySelectorAll('[data-tab]').forEach(tab=>{
     tab.addEventListener('click', function(){ showTab(this.getAttribute('data-tab')); });
   });
   document.getElementById('transactionType').addEventListener('change', updateFormFields);
