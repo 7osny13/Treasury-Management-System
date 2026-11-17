@@ -335,3 +335,16 @@ h1, h2, h3, .auth-title { font-weight: 600; }
   .bnav-btn.bnav-add.active { color: var(--accent); }
   .bnav-btn.bnav-add.active::before { display: none; }
 }
+
+/* ════════ العمولة ════════ */
+.fee-group input[type="number"] { margin-bottom: 8px; }
+.fee-on { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.fee-on-opt { flex: 1; min-width: 140px; display: flex !important; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-subtle); font-size: 13px; font-weight: 500; cursor: pointer; margin: 0 !important; }
+.fee-group .fee-on-opt input { width: 18px; height: 18px; padding: 0; margin: 0; flex-shrink: 0; accent-color: var(--primary); }
+.fee-on-opt:has(input:checked) { border-color: var(--primary-light); background: #e2f3f3; color: var(--primary); }
+.fee-summary { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+.fee-summary b { color: var(--text); font-variant-numeric: tabular-nums; }
+.fee-error { color: var(--danger); }
+.transaction-fee { font-size: 12.5px; color: #b5562f; background: #fdf0eb; border-radius: 8px; padding: 5px 10px; margin-top: 6px; display: inline-block; }
+.kpi-fees { border-top-color: #f2a541; }
+.kpi-fees .kpi-icon { color: #e08a1e; }

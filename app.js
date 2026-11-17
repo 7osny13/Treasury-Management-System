@@ -158,7 +158,8 @@ const TX_PAGE  = 1000;
 function txFromRow(r) {
   return {
     id: Number(r.id), date: new Date(r.tx_date).toISOString(), type: r.type, notes: r.notes || '',
-    amount: Number(r.amount), accountTo: r.account_to || null, accountFrom: r.account_from || null
+    amount: Number(r.amount), accountTo: r.account_to || null, accountFrom: r.account_from || null,
+    fee: Number(r.fee) || 0, feeOn: Number(r.fee) > 0 ? (r.fee_on || 'from') : null
   };
 }
 
@@ -166,7 +167,8 @@ function txToRow(t) {
   return {
     id: Number(t.id), type: t.type, amount: round2(t.amount),
     account_from: t.accountFrom || null, account_to: t.accountTo || null,
-    notes: t.notes || '', tx_date: new Date(t.date).toISOString()
+    notes: t.notes || '', tx_date: new Date(t.date).toISOString(),
+    fee: round2(t.fee || 0), fee_on: round2(t.fee || 0) > 0 ? (t.feeOn || 'from') : null
   };
 }
 
@@ -190,6 +192,10 @@ function normalizeData(raw) {
     if (!accounts[k].icon) accounts[k].icon = accounts[k].type === 'wallet' ? '📱' : '🏦';
   });
   const transactions = Array.isArray(d.transactions) ? d.transactions : [];
+  transactions.forEach(t => {   // ملفات قديمة من غير عمولة
+    t.fee = round2(t.fee || 0);
+    t.feeOn = t.fee > 0 ? (t.type === 'transfer' && t.feeOn === 'to' ? 'to' : 'from') : null;
+  });
   return { accounts, balances: computeBalances(accounts, transactions), transactions };
 }
 
@@ -212,7 +218,7 @@ async function fetchAllTx() {
   const all = [];
   for (let from = 0; ; ) {
     const { data, error } = await window.supabaseClient.from(TX_TABLE)
-      .select('id,type,amount,account_from,account_to,notes,tx_date')
+      .select('id,type,amount,account_from,account_to,notes,tx_date,fee,fee_on')
       .order('id', { ascending: false })
       .range(from, from + TX_PAGE - 1);
     if (error) throw error;
@@ -350,11 +356,38 @@ async function commit(op, replace = false) {
 // =====================
 const round2 = x => Math.round((Number(x) || 0) * 100) / 100;
 
+// العمولة: 'from' = بتتخصم من الحساب اللي طالع منه الفلوس فوق المبلغ
+//          'to'   = بتتخصم من المبلغ الواصل (التحويل بس)
 function txEffects(tx) {
   const amt = Number(tx.amount) || 0;
+  const fee = tx.type === 'income' ? 0 : (Number(tx.fee) || 0);
   if (tx.type === 'income')  return [[tx.accountTo, +amt]];
-  if (tx.type === 'expense') return [[tx.accountFrom, -amt]];
-  return [[tx.accountFrom, -amt], [tx.accountTo, +amt]];
+  if (tx.type === 'expense') return [[tx.accountFrom, -(amt + fee)]];
+  if (tx.feeOn === 'to')     return [[tx.accountFrom, -amt], [tx.accountTo, +(amt - fee)]];
+  return [[tx.accountFrom, -(amt + fee)], [tx.accountTo, +amt]];
+}
+
+// تجهيز وفحص العمولة — بيرجّع {fee, feeOn} أو {error}
+function cleanFee(type, amount, feeRaw, feeOnRaw) {
+  const fee = round2(parseFloat(feeRaw) || 0);
+  if (fee < 0) return { error: 'العمولة مينفعش تكون بالسالب' };
+  if (type === 'income' || fee === 0) return { fee: 0, feeOn: null };
+  const feeOn = type === 'transfer' && feeOnRaw === 'to' ? 'to' : 'from';
+  if (feeOn === 'to' && fee >= amount) return { error: 'العمولة لازم تكون أقل من المبلغ المحوّل' };
+  return { fee, feeOn };
+}
+
+// سطر بيوضح الخصم: هيتخصم كام من مين، وهيوصل كام لمين
+function feeSummaryText(type, amount, fee, feeOn, fromKey, toKey) {
+  if (type === 'income' || !(amount > 0)) return '';
+  const fromN = esc(getAccountName(fromKey)), toN = esc(getAccountName(toKey));
+  if (type === 'expense') {
+    return fee > 0 ? `هيتخصم من ${fromN}: <b>${formatNumber(amount + fee)}</b> (${formatNumber(amount)} + عمولة ${formatNumber(fee)})` : '';
+  }
+  if (!(fee > 0)) return '';
+  return feeOn === 'to'
+    ? `هيتخصم من ${fromN}: <b>${formatNumber(amount)}</b> — هيوصل ${toN}: <b>${formatNumber(amount - fee)}</b> (بعد عمولة ${formatNumber(fee)})`
+    : `هيتخصم من ${fromN}: <b>${formatNumber(amount + fee)}</b> (شامل عمولة ${formatNumber(fee)}) — هيوصل ${toN}: <b>${formatNumber(amount)}</b>`;
 }
 
 // sign = +1 تطبيق، -1 إلغاء. الحساب المحذوف (معاملات قديمة) بيتخطى بدل ما يبوظ الأرصدة
@@ -598,12 +631,13 @@ function updateStatisticsTab() {
     return d.getMonth()===statsMonth && d.getFullYear()===statsYear;
   });
 
-  let totalIncome=0, totalExpense=0;
+  let totalIncome=0, totalExpense=0, totalFees=0;
   monthTx.forEach(t => {
     if (t.type==='income')  totalIncome  += t.amount;
     if (t.type==='expense') totalExpense += t.amount;
+    if (t.type!=='income')  totalFees    += (t.fee || 0);
   });
-  const net = totalIncome - totalExpense;
+  const net = totalIncome - totalExpense - totalFees;   // العمولات فلوس خرجت فعلاً
 
   document.getElementById('kpiIncome').textContent  = `${formatNumber(totalIncome)} جنيه`;
   document.getElementById('kpiExpense').textContent = `${formatNumber(totalExpense)} جنيه`;
@@ -611,6 +645,8 @@ function updateStatisticsTab() {
   netEl.textContent = `${formatNumber(net)} جنيه`;
   netEl.style.color = net >= 0 ? '#28a745' : '#dc3545';
   document.getElementById('kpiCount').textContent = monthTx.length;
+  const feesEl = document.getElementById('kpiFees');
+  if (feesEl) feesEl.textContent = `${formatNumber(totalFees)} جنيه`;
 
   const incomeByAcc = {}, expenseByAcc = {};
   monthTx.forEach(t => {
@@ -663,6 +699,7 @@ function renderBalanceTrendChart() {
   sorted.forEach(t => {
     if (t.type==='income')  running += t.amount;
     if (t.type==='expense') running -= t.amount;
+    if (t.type!=='income')  running -= (t.fee || 0);
     points.push({ x: new Date(t.date).toLocaleDateString('ar-EG'), y: running });
   });
   const step = Math.max(1, Math.floor(points.length/30));
@@ -782,6 +819,9 @@ function renderFilteredTransactions() {
         <span class="transaction-amount">${formatNumber(t.amount)} جنيه</span>
       </div>
       <div class="transaction-details">${details}</div>
+      ${t.fee>0?`<div class="transaction-fee">عمولة ${formatNumber(t.fee)} جنيه — ${t.type==='transfer'&&t.feeOn==='to'
+          ? `اتخصمت من المبلغ الواصل (وصل ${esc(getAccountName(t.accountTo))} ${formatNumber(t.amount-t.fee)})`
+          : `اتخصمت من ${esc(getAccountName(t.accountFrom))} (الإجمالي ${formatNumber(t.amount+t.fee)})`}</div>`:''}
       ${t.notes?`<div class="transaction-notes">${ICO.note} ${esc(t.notes)}</div>`:''}
       <div class="transaction-footer">
         <span class="transaction-date">${ICO.clock} ${dateStr}</span>
@@ -831,7 +871,25 @@ function openEditTransaction(id) {
   else accountInfo = `من: ${getAccountName(t.accountFrom)} ← إلى: ${getAccountName(t.accountTo)}`;
   document.getElementById('editTxAccountInfo').textContent = accountInfo;
 
+  modal.dataset.type = t.type;
+  modal.dataset.from = t.accountFrom || '';
+  modal.dataset.to   = t.accountTo || '';
+  document.getElementById('editFeeGroup').style.display   = t.type==='income' ? 'none' : 'block';
+  document.getElementById('editFeeOnGroup').style.display = t.type==='transfer' ? 'flex' : 'none';
+  document.getElementById('editTxFee').value = t.fee > 0 ? t.fee : '';
+  document.querySelectorAll('input[name="editFeeOn"]').forEach(r => { r.checked = r.value === (t.feeOn === 'to' ? 'to' : 'from'); });
+  updateEditFeeSummary();
+
   modal.classList.add('modal-show');
+}
+
+function updateEditFeeSummary() {
+  const modal = document.getElementById('editTransactionModal');
+  const el = document.getElementById('editFeeSummary'); if (!el) return;
+  const type = modal.dataset.type;
+  const amount = round2(parseFloat(document.getElementById('editTxAmount').value));
+  const f = cleanFee(type, amount, document.getElementById('editTxFee').value, document.querySelector('input[name="editFeeOn"]:checked')?.value);
+  el.innerHTML = f.error ? `<span class="fee-error">${f.error}</span>` : feeSummaryText(type, amount, f.fee, f.feeOn, modal.dataset.from, modal.dataset.to);
 }
 
 function closeEditTransactionModal() {
@@ -848,6 +906,9 @@ async function saveEditTransaction() {
   if (!newAmount || newAmount <= 0) { showToast('من فضلك أدخل مبلغ صحيح','warning'); return; }
   if (!newDay) { showToast('من فضلك اختر التاريخ','warning'); return; }
   if (newDay > localDateStr()) { showToast('مينفعش تاريخ في المستقبل','warning'); return; }
+  const txType = document.getElementById('editTransactionModal').dataset.type;
+  const f = cleanFee(txType, newAmount, document.getElementById('editTxFee').value, document.querySelector('input[name="editFeeOn"]:checked')?.value);
+  if (f.error) { showToast(f.error,'warning'); return; }
 
   const ok = await commit(d => {
     const t = d.transactions.find(x => x.id === id);
@@ -856,6 +917,8 @@ async function saveEditTransaction() {
     applyEffects(d, t, -1);
     t.amount = newAmount;
     t.notes  = newNotes;
+    t.fee    = f.fee;
+    t.feeOn  = f.feeOn;
     if (newDay !== dateEl.dataset.original) t.date = txDateFromInput(newDay);
     applyEffects(d, t, +1);
     return checkNoNewNegative(d, before);
@@ -888,6 +951,19 @@ function updateFormFields() {
   if (type==='income')       { fg.style.display='none';  tg.style.display='block'; document.querySelector('#accountToGroup label').textContent='إلى الحساب'; }
   else if (type==='expense') { fg.style.display='block'; tg.style.display='none';  document.querySelector('#accountFromGroup label').textContent='من الحساب'; }
   else                       { fg.style.display='block'; tg.style.display='block'; }
+  document.getElementById('feeGroup').style.display   = type==='income' ? 'none' : 'block';
+  document.getElementById('feeOnGroup').style.display = type==='transfer' ? 'flex' : 'none';
+  updateFeeSummary();
+}
+
+function updateFeeSummary() {
+  const el = document.getElementById('feeSummary'); if (!el) return;
+  const type = document.getElementById('transactionType').value;
+  const amount = round2(parseFloat(document.getElementById('amount').value));
+  const feeOn = document.querySelector('input[name="feeOn"]:checked')?.value;
+  const f = cleanFee(type, amount, document.getElementById('fee').value, feeOn);
+  el.innerHTML = f.error ? `<span class="fee-error">${f.error}</span>`
+    : feeSummaryText(type, amount, f.fee, f.feeOn, document.getElementById('accountFrom').value, document.getElementById('accountTo').value);
 }
 
 function populateAccountSelects() {
@@ -918,6 +994,8 @@ async function addTransaction() {
   if (!amount||amount<=0) { showToast('من فضلك أدخل مبلغ صحيح','warning'); return; }
   if (type==='transfer'&&accountFrom===accountTo) { showToast('لا يمكن التحويل إلى نفس الحساب','warning'); return; }
   if (day > localDateStr()) { showToast('مينفعش تاريخ في المستقبل','warning'); return; }
+  const f = cleanFee(type, amount, document.getElementById('fee').value, document.querySelector('input[name="feeOn"]:checked')?.value);
+  if (f.error) { showToast(f.error,'warning'); return; }
 
   isSaving = true;
   const btn = document.getElementById('addTransactionBtn');
@@ -930,7 +1008,8 @@ async function addTransaction() {
       id: newTxId(d), type, amount, notes,
       accountFrom: type!=='income'?accountFrom:null,
       accountTo:   type!=='expense'?accountTo:null,
-      date: txDateFromInput(day)
+      date: txDateFromInput(day),
+      fee: f.fee, feeOn: f.feeOn
     };
     for (const k of [tx.accountFrom, tx.accountTo].filter(Boolean)) {
       if (!d.accounts[k]) return 'الحساب المختار غير موجود — ممكن يكون اتحذف من جهاز تاني';
@@ -944,6 +1023,7 @@ async function addTransaction() {
 
   if (saved) {
     document.getElementById('amount').value=''; document.getElementById('notes').value='';
+    document.getElementById('fee').value=''; updateFeeSummary();
     document.getElementById('txDate').value = localDateStr();
     showToast(day === localDateStr() ? 'تم حفظ المعاملة بنجاح' : `تم حفظ المعاملة بتاريخ ${new Date(day + 'T12:00:00').toLocaleDateString('ar-EG')}`,'success');
     showTab('dashboard');
@@ -1019,7 +1099,8 @@ async function importData() {
       const okType = t.type === 'income' ? !!t.accountTo : t.type === 'expense' ? !!t.accountFrom
                    : t.type === 'transfer' ? !!(t.accountFrom && t.accountTo) : false;
       const okId = Number.isSafeInteger(Number(t.id)) && !ids.has(Number(t.id)); ids.add(Number(t.id));
-      return !okType || !okId || !(Number(t.amount) > 0) || isNaN(new Date(t.date).getTime());
+      const okFee = !(t.fee > 0) || (t.type !== 'income' && (t.feeOn !== 'to' || t.fee < t.amount));
+      return !okType || !okId || !okFee || !(Number(t.amount) > 0) || isNaN(new Date(t.date).getTime());
     });
     if (bad) { showToast('الملف فيه معاملة ناقصة أو مكررة — الاستيراد اتلغى', 'error'); console.warn('bad tx', bad); return; }
     // الأرصدة بتتحسب من المعاملات — لو الملف فيه أرصدة مختلفة، ننبه
@@ -1080,6 +1161,26 @@ function setupEventListeners() {
     tab.addEventListener('click', function(){ showTab(this.getAttribute('data-tab')); });
   });
   document.getElementById('transactionType').addEventListener('change', updateFormFields);
+  ['amount','fee'].forEach(id => document.getElementById(id).addEventListener('input', updateFeeSummary));
+  ['accountFrom','accountTo'].forEach(id => document.getElementById(id).addEventListener('change', updateFeeSummary));
+  document.querySelectorAll('input[name="feeOn"]').forEach(r => r.addEventListener('change', updateFeeSummary));
+  ['editTxAmount','editTxFee'].forEach(id => document.getElementById(id).addEventListener('input', updateEditFeeSummary));
+  document.querySelectorAll('input[name="editFeeOn"]').forEach(r => r.addEventListener('change', updateEditFeeSummary));
+
+  // شريط التنقل تحت: كروم على الآيفون أحياناً بيغطي جزء منه لحد ما تعمل scroll
+  // (الصفحة فاكرة إنها أطول من الجزء الظاهر) — بنرفعه بقيمة الجزء المستخبي
+  const vv = window.visualViewport;
+  const fixBottomNav = () => {
+    const nav = document.querySelector('.bottom-nav');
+    if (!nav || !vv) return;
+    const hidden = Math.round(document.documentElement.clientHeight - (vv.height + vv.offsetTop));
+    nav.style.transform = hidden > 1 && vv.scale < 1.05 ? `translateY(-${hidden}px)` : '';
+  };
+  if (vv) { vv.addEventListener('resize', fixBottomNav); vv.addEventListener('scroll', fixBottomNav); }
+  window.addEventListener('resize', fixBottomNav);
+  window.addEventListener('pageshow', fixBottomNav);
+  window.addEventListener('orientationchange', () => setTimeout(fixBottomNav, 300));
+  setTimeout(fixBottomNav, 0); setTimeout(fixBottomNav, 600);
   document.getElementById('addTransactionBtn').addEventListener('click', addTransaction);
   document.getElementById('shareReportBtn').addEventListener('click', shareReport);
   document.getElementById('exportBtn').addEventListener('click', exportData);
