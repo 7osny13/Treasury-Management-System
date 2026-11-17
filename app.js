@@ -1181,6 +1181,27 @@ function setupEventListeners() {
   window.addEventListener('pageshow', fixBottomNav);
   window.addEventListener('orientationchange', () => setTimeout(fixBottomNav, 300));
   setTimeout(fixBottomNav, 0); setTimeout(fixBottomNav, 600);
+
+  // ?debug=1 → لوحة قياسات صغيرة فوق (لتشخيص شريط التنقل على كروم الآيفون)
+  if (/[?&]debug=1/.test(location.search)) {
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;bottom:0;left:0;width:1px;height:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden';
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;top:70px;left:8px;right:8px;z-index:99999;background:rgba(0,0,0,.85);color:#fff;font:12px/1.5 monospace;padding:8px 10px;border-radius:10px;direction:ltr;white-space:pre-wrap;pointer-events:none';
+    document.body.append(probe, box);
+    const show = () => {
+      const nav = document.querySelector('.bottom-nav')?.getBoundingClientRect();
+      box.textContent =
+        `innerH ${window.innerHeight}  outerH ${window.outerHeight}  clientH ${document.documentElement.clientHeight}\n` +
+        `vv.h ${vv ? vv.height.toFixed(1) : '-'}  vv.top ${vv ? vv.offsetTop.toFixed(1) : '-'}  scale ${vv ? vv.scale.toFixed(2) : '-'}\n` +
+        `screen ${screen.width}x${screen.height}  avail ${screen.availHeight}  dpr ${devicePixelRatio}\n` +
+        `safe-bottom ${probe.offsetHeight}  nav.top ${nav ? Math.round(nav.top) : '-'} nav.bottom ${nav ? Math.round(nav.bottom) : '-'}\n` +
+        `scrollY ${Math.round(scrollY)}  standalone ${!!navigator.standalone}\n` +
+        (navigator.userAgent.match(/(CriOS|Version)\/[\d.]+|OS [\d_]+/g) || []).join('  ');
+    };
+    ['resize', 'scroll'].forEach(e => { window.addEventListener(e, show); vv && vv.addEventListener(e, show); });
+    show(); setInterval(show, 1000);
+  }
   document.getElementById('addTransactionBtn').addEventListener('click', addTransaction);
   document.getElementById('shareReportBtn').addEventListener('click', shareReport);
   document.getElementById('exportBtn').addEventListener('click', exportData);
